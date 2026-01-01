@@ -41,13 +41,7 @@ const BUILTIN_IOCS = {
   ]
 };
 
-const EXTERNAL_FEEDS = [
-  {
-    name: 'datadog-iocs',
-    url: 'https://raw.githubusercontent.com/DataDog/malicious-software-packages-dataset/main/samples/npm/packages.txt',
-    parser: parseTextList
-  }
-];
+const EXTERNAL_FEEDS = [];
 
 async function updateIOCs() {
   console.log('[MUADDIB] Mise a jour des IOCs...\n');
