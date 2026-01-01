@@ -11,6 +11,7 @@ const options = args.slice(1);
 let target = '.';
 let jsonOutput = false;
 let htmlOutput = null;
+let sarifOutput = null;
 let explainMode = false;
 
 for (let i = 0; i < options.length; i++) {
@@ -18,6 +19,9 @@ for (let i = 0; i < options.length; i++) {
     jsonOutput = true;
   } else if (options[i] === '--html') {
     htmlOutput = options[i + 1] || 'muaddib-report.html';
+    i++;
+  } else if (options[i] === '--sarif') {
+    sarifOutput = options[i + 1] || 'muaddib-results.sarif';
     i++;
   } else if (options[i] === '--explain') {
     explainMode = true;
@@ -39,13 +43,19 @@ if (!command) {
   Options:
     --json           Sortie au format JSON
     --html [file]    Genere un rapport HTML
+    --sarif [file]   Genere un rapport SARIF (GitHub Security)
     --explain        Affiche les details de chaque detection
   `);
   process.exit(0);
 }
 
 if (command === 'scan') {
-  run(target, { json: jsonOutput, html: htmlOutput, explain: explainMode }).then(exitCode => {
+  run(target, { 
+    json: jsonOutput, 
+    html: htmlOutput, 
+    sarif: sarifOutput,
+    explain: explainMode 
+  }).then(exitCode => {
     process.exit(exitCode);
   });
 } else if (command === 'watch') {
@@ -58,7 +68,7 @@ if (command === 'scan') {
     process.exit(1);
   });
 } else if (command === 'help') {
-  console.log('muaddib scan [path] [--json] [--html file] [--explain] - Analyse un projet npm');
+  console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain]');
   console.log('muaddib watch [path] - Surveille un projet en temps reel');
   console.log('muaddib update - Met a jour les IOCs');
 } else {
