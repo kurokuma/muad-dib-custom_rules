@@ -2,6 +2,7 @@ const { scanPackageJson } = require('./scanner/package.js');
 const { scanShellScripts } = require('./scanner/shell.js');
 const { analyzeAST } = require('./scanner/ast.js');
 const { detectObfuscation } = require('./scanner/obfuscation.js');
+const { scanDependencies } = require('./scanner/dependencies.js');
 const { getPlaybook } = require('./response/playbooks.js');
 
 async function run(targetPath) {
@@ -24,6 +25,10 @@ async function run(targetPath) {
   // Detection d'obfuscation
   const obfuscationThreats = detectObfuscation(targetPath);
   threats.push(...obfuscationThreats);
+
+  // Scan des dependances node_modules
+  const dependencyThreats = await scanDependencies(targetPath);
+  threats.push(...dependencyThreats);
 
   // Resultats
   if (threats.length === 0) {
