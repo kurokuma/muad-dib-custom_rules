@@ -1,4 +1,22 @@
-# MUAD'DIB
+<p align="center">
+  <img src="MUADDIBLOGO.png" alt="MUAD'DIB Logo" width="200">
+</p>
+
+<h1 align="center">MUAD'DIB</h1>
+
+<p align="center">
+  <strong>Supply-chain threat detection & response for npm</strong>
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> •
+  <a href="#utilisation">Utilisation</a> •
+  <a href="#detection">Detection</a> •
+  <a href="#contribuer">Contribuer</a>
+</p>
+
+---
+
 
 Detection et reponse aux attaques supply chain npm.
 
