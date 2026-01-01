@@ -2,6 +2,7 @@
 
 const { run } = require('../src/index.js');
 const { updateIOCs } = require('../src/ioc/updater.js');
+const { watch } = require('../src/watch.js');
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -24,6 +25,7 @@ if (!command) {
   
   Usage:
     muaddib scan [path] [--json]    Analyse un projet
+    muaddib watch [path]            Surveille un projet en temps reel
     muaddib update                  Met a jour les IOCs
     muaddib help                    Affiche l'aide
   
@@ -37,6 +39,8 @@ if (command === 'scan') {
   run(target, { json: jsonOutput }).then(exitCode => {
     process.exit(exitCode);
   });
+} else if (command === 'watch') {
+  watch(target);
 } else if (command === 'update') {
   updateIOCs().then(() => {
     process.exit(0);
@@ -46,6 +50,7 @@ if (command === 'scan') {
   });
 } else if (command === 'help') {
   console.log('muaddib scan [path] [--json] - Analyse un projet npm');
+  console.log('muaddib watch [path] - Surveille un projet en temps reel');
   console.log('muaddib update - Met a jour les IOCs');
 } else {
   console.log(`Commande inconnue: ${command}`);
