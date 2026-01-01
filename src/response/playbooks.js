@@ -97,6 +97,9 @@ const PLAYBOOKS = {
 
   env_access:
     'Acces a une variable d\'environnement sensible. Verifier si les donnees sont exfiltrees.',
+
+  shai_hulud_marker:
+    'CRITIQUE: Marqueur Shai-Hulud detecte. Package compromis. Supprimer immediatement et regenerer tous les tokens.',
 };
 
 function getPlaybook(threatType) {
