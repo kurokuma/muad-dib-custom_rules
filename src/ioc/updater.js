@@ -43,9 +43,14 @@ const BUILTIN_IOCS = {
 
 const EXTERNAL_FEEDS = [
   {
-    name: 'socket-npm-malware',
-    url: 'https://raw.githubusercontent.com/nickvidal/awesome-malicious-packages/main/src/packages/npm.json',
-    parser: parseSocketFeed
+    name: 'github-advisory',
+    url: 'https://raw.githubusercontent.com/advisories/npm-malicious-packages/main/packages.json',
+    parser: parseGenericFeed
+  },
+  {
+    name: 'ossf-malicious-packages',
+    url: 'https://raw.githubusercontent.com/ossf/malicious-packages/main/osv/malicious/npm/index.json',
+    parser: parseOSSFFeed
   }
 ];
 
@@ -127,6 +132,42 @@ function parseSocketFeed(data) {
   } catch (e) {
     // Parse error
   }
+  return packages;
+}
+
+function parseGenericFeed(data) {
+  const packages = [];
+  try {
+    const json = JSON.parse(data);
+    if (Array.isArray(json)) {
+      for (const item of json) {
+        if (item.name || item.package) {
+          packages.push({
+            name: item.name || item.package,
+            version: item.version || '*',
+            source: 'github-advisory'
+          });
+        }
+      }
+    }
+  } catch (e) {}
+  return packages;
+}
+
+function parseOSSFFeed(data) {
+  const packages = [];
+  try {
+    const json = JSON.parse(data);
+    if (Array.isArray(json)) {
+      for (const item of json) {
+        packages.push({
+          name: item.replace('.json', ''),
+          version: '*',
+          source: 'ossf'
+        });
+      }
+    }
+  } catch (e) {}
   return packages;
 }
 
