@@ -124,8 +124,19 @@ async function run(targetPath, options = {}) {
     }
   }
 
-  const critical = threats.filter(t => t.severity === 'CRITICAL' || t.severity === 'HIGH');
-  return critical.length;
+// Calculer exit code selon le niveau de fail
+  const failLevel = options.failLevel || 'high';
+  const severityLevels = {
+    critical: ['CRITICAL'],
+    high: ['CRITICAL', 'HIGH'],
+    medium: ['CRITICAL', 'HIGH', 'MEDIUM'],
+    low: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+  };
+  
+  const levelsToCheck = severityLevels[failLevel] || severityLevels.high;
+  const failingThreats = threats.filter(t => levelsToCheck.includes(t.severity));
+  
+  return failingThreats.length;
 }
 
 module.exports = { run };
