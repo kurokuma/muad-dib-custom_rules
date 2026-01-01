@@ -33,6 +33,7 @@ async function run(targetPath) {
   // Resultats
   if (threats.length === 0) {
     console.log('[OK] Aucune menace detectee.\n');
+    return 0;
   } else {
     console.log(`[ALERTE] ${threats.length} menace(s) detectee(s):\n`);
     threats.forEach((t, i) => {
@@ -49,6 +50,10 @@ async function run(targetPath) {
         console.log(`  -> ${playbook}\n`);
       }
     });
+
+    // Retourne le nombre de menaces critiques/high
+    const critical = threats.filter(t => t.severity === 'CRITICAL' || t.severity === 'HIGH');
+    return critical.length;
   }
 }
 
