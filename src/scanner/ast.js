@@ -11,6 +11,12 @@ const EXCLUDED_FILES = [
   'src/response/playbooks.js'
 ];
 
+const EXCLUDED_DIRS = [
+  'test',
+  'node_modules',
+  '.git'
+];
+
 const DANGEROUS_CALLS = [
   'eval',
   'Function',
@@ -141,7 +147,7 @@ function findJsFiles(dir) {
   const items = fs.readdirSync(dir);
   
   for (const item of items) {
-    if (item === 'node_modules' || item === '.git') continue;
+    if (EXCLUDED_DIRS.includes(item)) continue;
     
     const fullPath = path.join(dir, item);
     const stat = fs.statSync(fullPath);
