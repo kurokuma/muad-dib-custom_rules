@@ -18,7 +18,9 @@ if (!command) {
 }
 
 if (command === 'scan') {
-  run(target);
+  run(target).then(exitCode => {
+    process.exit(exitCode);
+  });
 } else if (command === 'help') {
   console.log('muaddib scan [path] - Analyse un projet npm');
 } else {
