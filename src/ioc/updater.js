@@ -43,14 +43,9 @@ const BUILTIN_IOCS = {
 
 const EXTERNAL_FEEDS = [
   {
-    name: 'github-advisory',
-    url: 'https://raw.githubusercontent.com/advisories/npm-malicious-packages/main/packages.json',
-    parser: parseGenericFeed
-  },
-  {
-    name: 'ossf-malicious-packages',
-    url: 'https://raw.githubusercontent.com/ossf/malicious-packages/main/osv/malicious/npm/index.json',
-    parser: parseOSSFFeed
+    name: 'datadog-iocs',
+    url: 'https://raw.githubusercontent.com/DataDog/malicious-software-packages-dataset/main/samples/npm/packages.txt',
+    parser: parseTextList
   }
 ];
 
@@ -168,6 +163,24 @@ function parseOSSFFeed(data) {
       }
     }
   } catch (e) {}
+  return packages;
+}
+
+function parseTextList(data) {
+  const packages = [];
+  const lines = data.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+  
+  for (const line of lines) {
+    const name = line.trim();
+    if (name) {
+      packages.push({
+        name: name,
+        version: '*',
+        source: 'datadog'
+      });
+    }
+  }
+  
   return packages;
 }
 
