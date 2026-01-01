@@ -1,0 +1,152 @@
+const fs = require('fs');
+const path = require('path');
+
+function generateHTML(results) {
+  const { target, timestamp, threats, summary } = results;
+
+  const threatRows = threats.map(t => `
+    <tr class="${t.severity.toLowerCase()}">
+      <td>${t.severity}</td>
+      <td>${t.type}</td>
+      <td>${t.message}</td>
+      <td>${t.file}</td>
+      <td>${t.playbook}</td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUAD'DIB - Rapport de scan</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #e94560;
+      border-bottom: 2px solid #e94560;
+      padding-bottom: 10px;
+    }
+    .summary {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .summary-card {
+      background: #16213e;
+      padding: 20px;
+      border-radius: 8px;
+      flex: 1;
+    }
+    .summary-card h3 {
+      margin: 0 0 10px 0;
+      color: #888;
+      font-size: 14px;
+    }
+    .summary-card .value {
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .critical .value { color: #e94560; }
+    .high .value { color: #ff6b35; }
+    .medium .value { color: #f9c74f; }
+    .total .value { color: #4ecdc4; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    th {
+      background: #16213e;
+      color: #e94560;
+    }
+    tr.critical { background: rgba(233, 69, 96, 0.2); }
+    tr.high { background: rgba(255, 107, 53, 0.2); }
+    tr.medium { background: rgba(249, 199, 79, 0.1); }
+    .meta {
+      color: #666;
+      font-size: 12px;
+      margin-top: 40px;
+    }
+    .ok {
+      background: #16213e;
+      padding: 40px;
+      border-radius: 8px;
+      text-align: center;
+      color: #4ecdc4;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MUAD'DIB - Rapport de scan</h1>
+    
+    <div class="summary">
+      <div class="summary-card total">
+        <h3>TOTAL</h3>
+        <div class="value">${summary.total}</div>
+      </div>
+      <div class="summary-card critical">
+        <h3>CRITICAL</h3>
+        <div class="value">${summary.critical}</div>
+      </div>
+      <div class="summary-card high">
+        <h3>HIGH</h3>
+        <div class="value">${summary.high}</div>
+      </div>
+      <div class="summary-card medium">
+        <h3>MEDIUM</h3>
+        <div class="value">${summary.medium}</div>
+      </div>
+    </div>
+
+    ${threats.length > 0 ? `
+    <table>
+      <thead>
+        <tr>
+          <th>Severite</th>
+          <th>Type</th>
+          <th>Message</th>
+          <th>Fichier</th>
+          <th>Recommandation</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${threatRows}
+      </tbody>
+    </table>
+    ` : '<div class="ok">Aucune menace detectee</div>'}
+
+    <div class="meta">
+      <p>Cible: ${target}</p>
+      <p>Date: ${timestamp}</p>
+      <p>Genere par MUAD'DIB</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function saveReport(results, outputPath) {
+  const html = generateHTML(results);
+  fs.writeFileSync(outputPath, html);
+  return outputPath;
+}
+
+module.exports = { generateHTML, saveReport };
