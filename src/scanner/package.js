@@ -23,8 +23,7 @@ async function scanPackageJson(targetPath) {
   const threats = [];
   const pkgPath = path.join(targetPath, 'package.json');
 
-  if (!fs.existsSync(pkgPath)) {
-    console.log('[INFO] Pas de package.json trouve.\n');
+if (!fs.existsSync(pkgPath)) {
     return threats;
   }
 
