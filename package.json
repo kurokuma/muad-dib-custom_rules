@@ -1,0 +1,18 @@
+{
+  "name": "muaddib",
+  "version": "0.1.0",
+  "description": "Détection et réponse aux attaques supply chain npm",
+  "main": "src/index.js",
+  "bin": {
+    "muaddib": "./bin/muaddib.js"
+  },
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "keywords": ["security", "npm", "supply-chain", "malware", "scanner"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
