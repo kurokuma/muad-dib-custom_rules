@@ -2142,6 +2142,34 @@
       "description": "Potential typosquat of \"socket.io\"",
       "references": [],
       "mitre": "T1195.002"
+    },
+    {
+      "id": "GHSA-gvq6-hvvp-h34h",
+      "name": "@adonisjs/bodyparser",
+      "version": "< 10.1.2",
+      "severity": "critical",
+      "confidence": "high",
+      "source": "github-advisory",
+      "description": "AdonisJS Path Traversal in Multipart File Handling",
+      "references": [
+        "https://github.com/advisories/GHSA-gvq6-hvvp-h34h"
+      ],
+      "mitre": "T1195.002",
+      "cve": "CVE-2026-21440"
+    },
+    {
+      "id": "GHSA-fq56-hvg6-wvm5",
+      "name": "signalk-server",
+      "version": "< 2.19.0",
+      "severity": "critical",
+      "confidence": "high",
+      "source": "github-advisory",
+      "description": "Signal K Server vulnerable to JWT Token Theft via WebSocket Enumeration and Unauthenticated Polling",
+      "references": [
+        "https://github.com/advisories/GHSA-fq56-hvg6-wvm5"
+      ],
+      "mitre": "T1195.002",
+      "cve": "CVE-2025-68620"
     }
   ],
   "hashes": [

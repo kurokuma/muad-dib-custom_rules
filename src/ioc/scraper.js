@@ -52,7 +52,6 @@ async function scrapeGitHubAdvisories() {
   const packages = [];
   
   try {
-    // Plusieurs pages
     for (let page = 1; page <= 5; page++) {
       const url = `https://api.github.com/advisories?ecosystem=npm&per_page=100&page=${page}`;
       const { status, data } = await fetchJSON(url);
@@ -97,7 +96,6 @@ async function scrapeOSV() {
   const packages = [];
   
   try {
-    // Query malware specifique
     const queries = [
       { package: { ecosystem: 'npm' }, query: 'malware' },
       { package: { ecosystem: 'npm' }, query: 'malicious' },
@@ -140,54 +138,24 @@ async function scrapeOSV() {
 }
 
 // ============================================
-// SOURCE 3: Snyk Vulnerability DB (publique)
-// ============================================
-async function scrapeSnyk() {
-  console.log('[SCRAPER] Snyk Vulnerability DB...');
-  const packages = [];
-  
-  // Packages malveillants connus de Snyk (liste statique car API payante)
-  const knownMalicious = [
-    'event-stream', 'flatmap-stream', 'eslint-scope', 'eslint-config-eslint',
-    'getcookies', 'mailparser', 'nodemailer', 'nodemailer-js', 'node-ipc',
-    'peacenotwar', 'colors', 'faker', 'ua-parser-js', 'rc', 'coa',
-    'pac-resolver', 'set-value', 'ansi-html', 'ini', 'y18n', 'node-notifier',
-    'trim', 'trim-newlines', 'glob-parent', 'is-svg', 'css-what', 'normalize-url',
-    'hosted-git-info', 'ssri', 'tar', 'path-parse', 'json-schema',
-    'underscore', 'handlebars', 'lodash', 'marked', 'minimist', 'kind-of'
-  ];
-  
-  // On ne les ajoute que s'ils ont des versions malveillantes specifiques
-  // Pour l'instant on skip car c'est trop de faux positifs
-  console.log(`[SCRAPER]   -> Skip (API payante)`);
-  
-  return packages;
-}
-
-// ============================================
-// SOURCE 4: Socket.dev (via leur blog/reports)
+// SOURCE 3: Socket.dev reports
 // ============================================
 async function scrapeSocketReports() {
   console.log('[SCRAPER] Socket.dev reports...');
   const packages = [];
   
-  // Packages malveillants reportes par Socket.dev
   const socketMalicious = [
-    // Shai-Hulud variants
     { name: '@pnpm.exe/pnpm', severity: 'critical', source: 'socket-shai-hulud' },
     { name: '@nicklason/npm', severity: 'critical', source: 'socket-shai-hulud' },
     { name: 'bb-builder', severity: 'critical', source: 'socket-shai-hulud' },
     { name: 'codespaces-blank', severity: 'critical', source: 'socket-shai-hulud' },
-    // Crypto stealers
     { name: 'crypto-browserify-aes', severity: 'critical', source: 'socket-crypto-stealer' },
     { name: 'eth-wallet-gen', severity: 'critical', source: 'socket-crypto-stealer' },
     { name: 'solana-wallet-tools', severity: 'critical', source: 'socket-crypto-stealer' },
-    // Discord token stealers
     { name: 'discord-selfbot-tools', severity: 'critical', source: 'socket-discord-stealer' },
     { name: 'discord-selfbot-v13', severity: 'critical', source: 'socket-discord-stealer' },
     { name: 'discord-token-grabber', severity: 'critical', source: 'socket-discord-stealer' },
     { name: 'discordbot-tokens', severity: 'critical', source: 'socket-discord-stealer' },
-    // Typosquats recents
     { name: 'electorn', severity: 'high', source: 'socket-typosquat' },
     { name: 'electrn', severity: 'high', source: 'socket-typosquat' },
     { name: 'reqeusts', severity: 'high', source: 'socket-typosquat' },
@@ -205,7 +173,6 @@ async function scrapeSocketReports() {
     { name: 'reactt', severity: 'high', source: 'socket-typosquat' },
     { name: 'chalks', severity: 'high', source: 'socket-typosquat' },
     { name: 'chalkk', severity: 'high', source: 'socket-typosquat' },
-    // Protestware
     { name: 'styled-components-native', severity: 'high', source: 'socket-protestware' },
     { name: 'es5-ext', severity: 'medium', source: 'socket-protestware' }
   ];
@@ -229,28 +196,22 @@ async function scrapeSocketReports() {
 }
 
 // ============================================
-// SOURCE 5: Phylum Research
+// SOURCE 4: Phylum Research
 // ============================================
 async function scrapePhylum() {
   console.log('[SCRAPER] Phylum Research...');
   const packages = [];
   
-  // Packages malveillants reportes par Phylum
   const phylumMalicious = [
-    // Shai-Hulud original
     { name: '@nicklason/npm-register', severity: 'critical' },
     { name: 'lemaaa', severity: 'critical' },
     { name: 'badshell', severity: 'critical' },
-    // Reverse shells
     { name: 'node-shell', severity: 'critical' },
     { name: 'reverse-shell-as-a-service', severity: 'critical' },
-    // Data exfiltration
     { name: 'browserify-sign-steal', severity: 'critical' },
     { name: 'npm-script-demo', severity: 'high' },
-    // Malware loaders
     { name: 'load-from-cwd-or-npm', severity: 'high' },
     { name: 'loadyaml-', severity: 'high' },
-    // Install scripts malicious
     { name: 'preinstall-script', severity: 'high' },
     { name: 'postinstall-script', severity: 'high' }
   ];
@@ -274,13 +235,12 @@ async function scrapePhylum() {
 }
 
 // ============================================
-// SOURCE 6: npm unpublished/removed packages
+// SOURCE 5: npm removed packages
 // ============================================
 async function scrapeNpmRemoved() {
   console.log('[SCRAPER] npm removed packages...');
   const packages = [];
   
-  // Packages retires de npm pour raisons de securite
   const removedPackages = [
     { name: 'event-stream', version: '3.3.6', reason: 'Malicious code injection' },
     { name: 'flatmap-stream', version: '0.1.1', reason: 'Bitcoin wallet stealer' },
@@ -314,13 +274,12 @@ async function scrapeNpmRemoved() {
 }
 
 // ============================================
-// SOURCE 7: Known typosquats generator
+// SOURCE 6: Typosquats generator
 // ============================================
 async function generateTyposquats() {
   console.log('[SCRAPER] Typosquats generation...');
   const packages = [];
   
-  // Top packages npm et leurs typosquats connus
   const typosquatMap = {
     'lodash': ['lodahs', 'lodasg', 'lodash-', '-lodash', 'lodas', 'lodashh'],
     'express': ['expres', 'expresss', 'exprees', 'exprss', 'exppress'],
@@ -365,6 +324,90 @@ async function generateTyposquats() {
 }
 
 // ============================================
+// SOURCE 7: AlienVault OTX
+// ============================================
+async function scrapeAlienVault() {
+  console.log('[SCRAPER] AlienVault OTX...');
+  const packages = [];
+  
+  try {
+    const searches = ['npm%20malware', 'nodejs%20malware', 'supply%20chain%20npm'];
+    
+    for (const search of searches) {
+      const url = `https://otx.alienvault.com/api/v1/search/pulses?q=${search}&limit=20`;
+      const { status, data } = await fetchJSON(url);
+      
+      if (status === 200 && data?.results) {
+        for (const pulse of data.results) {
+          if (pulse.indicators) {
+            for (const indicator of pulse.indicators) {
+              if (indicator.type === 'hostname' || indicator.type === 'domain' || indicator.type === 'FileHash-SHA256') {
+                const name = indicator.indicator;
+                // Filtre pour noms de packages npm potentiels
+                if (name && !name.includes('.') && !name.includes('/') && name.length > 2 && name.length < 50) {
+                  packages.push({
+                    id: `OTX-${pulse.id}-${name.slice(0, 20)}`,
+                    name: name,
+                    version: '*',
+                    severity: 'high',
+                    confidence: 'medium',
+                    source: 'alienvault-otx',
+                    description: (pulse.name || 'AlienVault OTX threat intelligence').slice(0, 200),
+                    references: [`https://otx.alienvault.com/pulse/${pulse.id}`],
+                    mitre: 'T1195.002'
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`[SCRAPER]   -> ${packages.length} packages trouves`);
+  } catch (e) {
+    console.log(`[SCRAPER]   -> Erreur: ${e.message}`);
+  }
+  
+  return packages;
+}
+
+// ============================================
+// SOURCE 8: Aikido Intel (leur feed public)
+// ============================================
+async function scrapeAikidoIntel() {
+  console.log('[SCRAPER] Aikido Intel...');
+  const packages = [];
+  
+  try {
+    const url = 'https://intel.aikido.dev/api/v1/malware?ecosystem=npm&limit=100';
+    const { status, data } = await fetchJSON(url);
+    
+    if (status === 200 && Array.isArray(data)) {
+      for (const pkg of data) {
+        packages.push({
+          id: `AIKIDO-${pkg.name || pkg.id}`,
+          name: pkg.name,
+          version: pkg.version || '*',
+          severity: pkg.severity || 'high',
+          confidence: 'high',
+          source: 'aikido-intel',
+          description: (pkg.description || 'Malware detected by Aikido Intel').slice(0, 200),
+          references: ['https://intel.aikido.dev'],
+          mitre: 'T1195.002'
+        });
+      }
+    }
+    
+    console.log(`[SCRAPER]   -> ${packages.length} packages trouves`);
+  } catch (e) {
+    console.log(`[SCRAPER]   -> Erreur: ${e.message}`);
+  }
+  
+  return packages;
+}
+
+// ============================================
 // MAIN SCRAPER
 // ============================================
 async function runScraper() {
@@ -372,7 +415,6 @@ async function runScraper() {
   console.log('║      MUAD\'DIB IOC Scraper                  ║');
   console.log('╚════════════════════════════════════════════╝\n');
   
-  // Charger les IOCs existants
   let existingIOCs = { packages: [], hashes: [], markers: [], files: [] };
   if (fs.existsSync(IOC_FILE)) {
     existingIOCs = JSON.parse(fs.readFileSync(IOC_FILE, 'utf8'));
@@ -381,17 +423,17 @@ async function runScraper() {
   const existingNames = new Set(existingIOCs.packages.map(p => p.name));
   const initialCount = existingIOCs.packages.length;
   
-  // Scraper toutes les sources
   const results = await Promise.all([
     scrapeGitHubAdvisories(),
     scrapeOSV(),
     scrapeSocketReports(),
     scrapePhylum(),
     scrapeNpmRemoved(),
-    generateTyposquats()
+    generateTyposquats(),
+    scrapeAlienVault(),
+    scrapeAikidoIntel()
   ]);
   
-  // Fusionner sans doublons
   let added = 0;
   for (const pkgList of results) {
     for (const pkg of pkgList) {
@@ -403,7 +445,6 @@ async function runScraper() {
     }
   }
   
-  // Sauvegarder
   fs.writeFileSync(IOC_FILE, JSON.stringify(existingIOCs, null, 2));
   
   console.log('\n╔════════════════════════════════════════════╗');
