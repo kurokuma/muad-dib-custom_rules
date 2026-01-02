@@ -4,6 +4,7 @@ const { run } = require('../src/index.js');
 const { updateIOCs } = require('../src/ioc/updater.js');
 const { watch } = require('../src/watch.js');
 const { startDaemon } = require('../src/daemon.js');
+const { runScraper } = require('../src/ioc/scraper.js');
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -58,6 +59,7 @@ if (!command) {
                         Defaut: high (fail sur HIGH et CRITICAL)
     --webhook [url]     Envoie une alerte Discord/Slack
     muaddib daemon [options]        Lance le daemon de surveillance
+    muaddib scrape                  Scrape les advisories pour nouveaux IOCs
   `);
   process.exit(0);
 }
@@ -88,6 +90,14 @@ if (command === 'scan') {
   console.log('muaddib update - Met a jour les IOCs');
 } else if (command === 'daemon') {
   startDaemon({ webhook: webhookUrl });
+} else if (command === 'scrape') {
+  runScraper().then(result => {
+    console.log(`[OK] ${result.added} nouveaux IOCs ajoutes (total: ${result.total})`);
+    process.exit(0);
+  }).catch(err => {
+    console.error('[ERREUR]', err.message);
+    process.exit(1);
+  });
 } else {
   console.log(`Commande inconnue: ${command}`);
   process.exit(1);
