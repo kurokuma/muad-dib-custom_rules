@@ -10,6 +10,7 @@ const { getRule } = require('./rules/index.js');
 const { saveReport } = require('./report.js');
 const { saveSARIF } = require('./sarif.js');
 const { scanTyposquatting } = require('./scanner/typosquat.js');
+const { sendWebhook } = require('./webhook.js');
 
 async function run(targetPath, options = {}) {
   const threats = [];
@@ -152,7 +153,17 @@ async function run(targetPath, options = {}) {
     }
   }
 
-// Calculer exit code selon le niveau de fail
+// Envoyer webhook si configure
+  if (options.webhook) {
+    try {
+      await sendWebhook(options.webhook, result);
+      console.log(`[OK] Alerte envoyee au webhook`);
+    } catch (err) {
+      console.log(`[WARN] Echec envoi webhook: ${err.message}`);
+    }
+  }
+
+  // Calculer exit code selon le niveau de fail
   const failLevel = options.failLevel || 'high';
   const severityLevels = {
     critical: ['CRITICAL'],

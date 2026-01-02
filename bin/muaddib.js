@@ -13,7 +13,8 @@ let jsonOutput = false;
 let htmlOutput = null;
 let sarifOutput = null;
 let explainMode = false;
-let failLevel = 'high'; // Par defaut, fail sur HIGH et CRITICAL
+let failLevel = 'high';
+let webhookUrl = null;
 
 for (let i = 0; i < options.length; i++) {
   if (options[i] === '--json') {
@@ -28,6 +29,9 @@ for (let i = 0; i < options.length; i++) {
     explainMode = true;
   } else if (options[i] === '--fail-on') {
     failLevel = options[i + 1] || 'high';
+    i++;
+  } else if (options[i] === '--webhook') {
+    webhookUrl = options[i + 1];
     i++;
   } else if (!options[i].startsWith('-')) {
     target = options[i];
@@ -51,6 +55,7 @@ if (!command) {
     --explain           Affiche les details de chaque detection
     --fail-on [level]   Niveau de severite pour exit code (critical|high|medium|low)
                         Defaut: high (fail sur HIGH et CRITICAL)
+    --webhook [url]     Envoie une alerte Discord/Slack
   `);
   process.exit(0);
 }
@@ -61,7 +66,8 @@ if (command === 'scan') {
     html: htmlOutput, 
     sarif: sarifOutput,
     explain: explainMode,
-    failLevel: failLevel
+    failLevel: failLevel,
+    webhook: webhookUrl
   }).then(exitCode => {
     process.exit(exitCode);
   });
@@ -75,7 +81,7 @@ if (command === 'scan') {
     process.exit(1);
   });
 } else if (command === 'help') {
-  console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain] [--fail-on level]');
+  console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain] [--fail-on level] [--webhook url]');
   console.log('muaddib watch [path] - Surveille un projet en temps reel');
   console.log('muaddib update - Met a jour les IOCs');
 } else {
