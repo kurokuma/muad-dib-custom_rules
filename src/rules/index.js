@@ -207,4 +207,43 @@ function getRule(type) {
   };
 }
 
-module.exports = { RULES, getRule };
+// Paranoid rules (ultra-strict)
+const PARANOID_RULES = {
+  network_access: {
+    id: 'MUADDIB-PARANOID-001',
+    severity: 'HIGH',
+    patterns: ['fetch', 'axios', 'http.request', 'https.request', 'net.connect', 'XMLHttpRequest'],
+    message: 'Network access detected (paranoid mode)',
+    mitre: 'T1071'
+  },
+  sensitive_file_access: {
+    id: 'MUADDIB-PARANOID-002',
+    severity: 'HIGH',
+    patterns: ['.env', '.npmrc', '.ssh', '.git', 'id_rsa', 'credentials', 'secrets'],
+    message: 'Sensitive file access detected (paranoid mode)',
+    mitre: 'T1552.001'
+  },
+  dynamic_execution: {
+    id: 'MUADDIB-PARANOID-003',
+    severity: 'CRITICAL',
+    patterns: ['eval', 'Function', 'vm.runInContext'],
+    message: 'Dynamic code execution detected (paranoid mode)',
+    mitre: 'T1059'
+  },
+  subprocess: {
+    id: 'MUADDIB-PARANOID-004',
+    severity: 'CRITICAL',
+    patterns: ['child_process', 'spawn', 'exec', 'execSync', 'spawnSync', 'fork'],
+    message: 'Subprocess execution detected (paranoid mode)',
+    mitre: 'T1059.004'
+  },
+  env_access: {
+    id: 'MUADDIB-PARANOID-005',
+    severity: 'MEDIUM',
+    patterns: ['process.env'],
+    message: 'Environment variable access detected (paranoid mode)',
+    mitre: 'T1552.001'
+  }
+};
+
+module.exports = { RULES, getRule, PARANOID_RULES };

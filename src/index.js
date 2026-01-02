@@ -6,11 +6,64 @@ const { scanDependencies } = require('./scanner/dependencies.js');
 const { scanHashes } = require('./scanner/hash.js');
 const { analyzeDataFlow } = require('./scanner/dataflow.js');
 const { getPlaybook } = require('./response/playbooks.js');
-const { getRule } = require('./rules/index.js');
+const { getRule, PARANOID_RULES } = require('./rules/index.js');
 const { saveReport } = require('./report.js');
 const { saveSARIF } = require('./sarif.js');
 const { scanTyposquatting } = require('./scanner/typosquat.js');
 const { sendWebhook } = require('./webhook.js');
+const fs = require('fs');
+const path = require('path');
+
+// Scan paranoid mode
+function scanParanoid(targetPath) {
+  const threats = [];
+  
+  function scanFile(filePath) {
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      
+      for (const [ruleKey, rule] of Object.entries(PARANOID_RULES)) {
+        for (const pattern of rule.patterns) {
+          if (content.includes(pattern)) {
+            threats.push({
+              type: rule.id,
+              severity: rule.severity.toUpperCase(),
+              message: `${rule.message}: "${pattern}"`,
+              file: path.relative(targetPath, filePath),
+              mitre: rule.mitre
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore read errors
+    }
+  }
+  
+  function walkDir(dir) {
+    const excluded = ['node_modules', '.git', 'test', 'tests', 'src', 'vscode-extension'];
+    try {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+          if (!excluded.includes(file)) {
+            walkDir(fullPath);
+          }
+        } else if (file.endsWith('.js') || file.endsWith('.json') || file.endsWith('.sh')) {
+          scanFile(fullPath);
+        }
+      }
+    } catch (e) {
+      // Ignore walk errors
+    }
+  }
+  
+  walkDir(targetPath);
+  return threats;
+}
 
 async function run(targetPath, options = {}) {
   const threats = [];
@@ -36,34 +89,40 @@ async function run(targetPath, options = {}) {
   const dataflowThreats = await analyzeDataFlow(targetPath);
   threats.push(...dataflowThreats);
 
-  // Scan typosquatting
   const typosquatThreats = await scanTyposquatting(targetPath);
   threats.push(...typosquatThreats);
+
+  // Paranoid mode
+  if (options.paranoid) {
+    console.log('[PARANOID] Mode ultra-strict active\n');
+    const paranoidThreats = scanParanoid(targetPath);
+    threats.push(...paranoidThreats);
+  }
 
   // Enrichir chaque menace avec les regles
   const enrichedThreats = threats.map(t => {
     const rule = getRule(t.type);
     return {
       ...t,
-      rule_id: rule.id,
-      rule_name: rule.name,
-      confidence: rule.confidence,
-      references: rule.references,
-      mitre: rule.mitre,
+      rule_id: rule.id || t.type,
+      rule_name: rule.name || t.type,
+      confidence: rule.confidence || 'medium',
+      references: rule.references || [],
+      mitre: t.mitre || rule.mitre,
       playbook: getPlaybook(t.type)
     };
   });
 
-// Calculer le score de risque (0-100)
+  // Calculer le score de risque (0-100)
   const criticalCount = threats.filter(t => t.severity === 'CRITICAL').length;
   const highCount = threats.filter(t => t.severity === 'HIGH').length;
   const mediumCount = threats.filter(t => t.severity === 'MEDIUM').length;
   
   let riskScore = 0;
-  riskScore += criticalCount * 25;  // CRITICAL = 25 points
-  riskScore += highCount * 10;       // HIGH = 10 points
-  riskScore += mediumCount * 3;      // MEDIUM = 3 points
-  riskScore = Math.min(100, riskScore); // Cap a 100
+  riskScore += criticalCount * 25;
+  riskScore += highCount * 10;
+  riskScore += mediumCount * 3;
+  riskScore = Math.min(100, riskScore);
 
   const riskLevel = riskScore >= 75 ? 'CRITICAL' 
                   : riskScore >= 50 ? 'HIGH'
@@ -125,11 +184,10 @@ async function run(targetPath, options = {}) {
       });
     }
   }
-// Sortie normale
+  // Sortie normale
   else {
     console.log(`\n[MUADDIB] Scan de ${targetPath}\n`);
 
-    // Afficher le score de risque
     const scoreBar = '█'.repeat(Math.floor(result.summary.riskScore / 5)) + '░'.repeat(20 - Math.floor(result.summary.riskScore / 5));
     console.log(`[SCORE] ${result.summary.riskScore}/100 [${scoreBar}] ${result.summary.riskLevel}\n`);
 
@@ -153,7 +211,7 @@ async function run(targetPath, options = {}) {
     }
   }
 
-// Envoyer webhook si configure
+  // Envoyer webhook si configure
   if (options.webhook) {
     try {
       await sendWebhook(options.webhook, result);

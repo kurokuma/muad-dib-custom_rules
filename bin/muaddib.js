@@ -17,6 +17,7 @@ let sarifOutput = null;
 let explainMode = false;
 let failLevel = 'high';
 let webhookUrl = null;
+let paranoidMode = false;
 
 for (let i = 0; i < options.length; i++) {
   if (options[i] === '--json') {
@@ -35,6 +36,8 @@ for (let i = 0; i < options.length; i++) {
   } else if (options[i] === '--webhook') {
     webhookUrl = options[i + 1];
     i++;
+  } else if (options[i] === '--paranoid') {
+    paranoidMode = true;
   } else if (!options[i].startsWith('-')) {
     target = options[i];
   }
@@ -42,24 +45,25 @@ for (let i = 0; i < options.length; i++) {
 
 if (!command) {
   console.log(`
-  MUAD'DIB - Chasseur de vers npm
+  MUAD'DIB - npm Supply Chain Threat Hunter
   
   Usage:
-    muaddib scan [path] [options]   Analyse un projet
-    muaddib watch [path]            Surveille un projet en temps reel
-    muaddib update                  Met a jour les IOCs
-    muaddib help                    Affiche l'aide
+    muaddib scan [path] [options]    Scan a project
+    muaddib watch [path]             Watch a project in real-time
+    muaddib daemon [options]         Start background daemon
+    muaddib update                   Update IOCs
+    muaddib scrape                   Scrape new IOCs from advisories
+    muaddib help                     Show help
   
   Options:
-    --json              Sortie au format JSON
-    --html [file]       Genere un rapport HTML
-    --sarif [file]      Genere un rapport SARIF (GitHub Security)
-    --explain           Affiche les details de chaque detection
-    --fail-on [level]   Niveau de severite pour exit code (critical|high|medium|low)
-                        Defaut: high (fail sur HIGH et CRITICAL)
-    --webhook [url]     Envoie une alerte Discord/Slack
-    muaddib daemon [options]        Lance le daemon de surveillance
-    muaddib scrape                  Scrape les advisories pour nouveaux IOCs
+    --json              Output as JSON
+    --html [file]       Generate HTML report
+    --sarif [file]      Generate SARIF report (GitHub Security)
+    --explain           Show detailed explanations
+    --fail-on [level]   Severity level for exit code (critical|high|medium|low)
+                        Default: high (fail on HIGH and CRITICAL)
+    --webhook [url]     Send Discord/Slack alert
+    --paranoid          Enable ultra-strict rules (more false positives)
   `);
   process.exit(0);
 }
@@ -71,7 +75,8 @@ if (command === 'scan') {
     sarif: sarifOutput,
     explain: explainMode,
     failLevel: failLevel,
-    webhook: webhookUrl
+    webhook: webhookUrl,
+    paranoid: paranoidMode
   }).then(exitCode => {
     process.exit(exitCode);
   });
@@ -81,24 +86,26 @@ if (command === 'scan') {
   updateIOCs().then(() => {
     process.exit(0);
   }).catch(err => {
-    console.error('[ERREUR]', err.message);
+    console.error('[ERROR]', err.message);
     process.exit(1);
   });
-} else if (command === 'help') {
-  console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain] [--fail-on level] [--webhook url]');
-  console.log('muaddib watch [path] - Surveille un projet en temps reel');
-  console.log('muaddib update - Met a jour les IOCs');
-} else if (command === 'daemon') {
-  startDaemon({ webhook: webhookUrl });
 } else if (command === 'scrape') {
   runScraper().then(result => {
-    console.log(`[OK] ${result.added} nouveaux IOCs ajoutes (total: ${result.total})`);
+    console.log(`[OK] ${result.added} new IOCs added (total: ${result.total})`);
     process.exit(0);
   }).catch(err => {
-    console.error('[ERREUR]', err.message);
+    console.error('[ERROR]', err.message);
     process.exit(1);
   });
+} else if (command === 'daemon') {
+  startDaemon({ webhook: webhookUrl });
+} else if (command === 'help') {
+  console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain] [--fail-on level] [--webhook url] [--paranoid]');
+  console.log('muaddib watch [path] - Watch a project in real-time');
+  console.log('muaddib daemon [--webhook url] - Start background daemon');
+  console.log('muaddib update - Update IOCs');
+  console.log('muaddib scrape - Scrape new IOCs');
 } else {
-  console.log(`Commande inconnue: ${command}`);
+  console.log(`Unknown command: ${command}`);
   process.exit(1);
-} 
+}
