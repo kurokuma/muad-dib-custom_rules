@@ -21,6 +21,34 @@ const POPULAR_PACKAGES = [
   'prop-types', 'cross-env', 'npm', 'yarn', 'pnpm', 'node-fetch', 'got'
 ];
 
+// Packages legitimes qui ressemblent a des populaires mais sont OK
+const WHITELIST = [
+  'acorn',
+  'acorn-walk',
+  'js-yaml',
+  'cross-env',
+  'node-fetch',
+  'node-gyp',
+  'core-js',
+  'lodash-es',
+  'date-fns',
+  'ts-node',
+  'ts-jest',
+  'css-loader',
+  'style-loader',
+  'file-loader',
+  'url-loader',
+  'babel-loader',
+  'vue-loader',
+  'react-dom',
+  'react-router',
+  'react-redux',
+  'vue-router',
+  'express-session',
+  'body-parser',
+  'cookie-parser'
+];
+
 // Techniques de typosquatting connues
 const TYPOSQUAT_PATTERNS = [
   { type: 'missing_char', fn: (name) => generateMissingChar(name) },
@@ -69,6 +97,9 @@ async function scanTyposquatting(targetPath) {
 }
 
 function findTyposquatMatch(name) {
+  // Ignore les packages whitelistes
+  if (WHITELIST.includes(name)) return null;
+  
   // Ignore les packages scoped (@org/package)
   if (name.startsWith('@')) return null;
 

@@ -3,6 +3,7 @@
 const { run } = require('../src/index.js');
 const { updateIOCs } = require('../src/ioc/updater.js');
 const { watch } = require('../src/watch.js');
+const { startDaemon } = require('../src/daemon.js');
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -56,6 +57,7 @@ if (!command) {
     --fail-on [level]   Niveau de severite pour exit code (critical|high|medium|low)
                         Defaut: high (fail sur HIGH et CRITICAL)
     --webhook [url]     Envoie une alerte Discord/Slack
+    muaddib daemon [options]        Lance le daemon de surveillance
   `);
   process.exit(0);
 }
@@ -84,7 +86,9 @@ if (command === 'scan') {
   console.log('muaddib scan [path] [--json] [--html file] [--sarif file] [--explain] [--fail-on level] [--webhook url]');
   console.log('muaddib watch [path] - Surveille un projet en temps reel');
   console.log('muaddib update - Met a jour les IOCs');
+} else if (command === 'daemon') {
+  startDaemon({ webhook: webhookUrl });
 } else {
   console.log(`Commande inconnue: ${command}`);
   process.exit(1);
-}
+} 

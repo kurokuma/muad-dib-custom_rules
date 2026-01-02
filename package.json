@@ -38,6 +38,7 @@
   "dependencies": {
     "acorn": "^8.14.0",
     "acorn-walk": "^8.3.4",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21"
   }
 }
