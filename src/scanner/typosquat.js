@@ -7,57 +7,46 @@ const POPULAR_PACKAGES = [
   'request', 'async', 'bluebird', 'underscore', 'uuid', 'debug', 'mkdirp',
   'glob', 'minimist', 'webpack', 'babel-core', 'typescript', 'eslint',
   'prettier', 'jest', 'mocha', 'chai', 'sinon', 'mongoose', 'sequelize',
-  'mysql', 'pg', 'redis', 'mongodb', 'socket.io', 'express-session',
+  'mysql', 'redis', 'mongodb', 'socket.io', 'express-session',
   'body-parser', 'cookie-parser', 'cors', 'helmet', 'morgan', 'dotenv',
   'jsonwebtoken', 'bcrypt', 'passport', 'nodemailer', 'aws-sdk', 'stripe',
   'twilio', 'firebase', 'graphql', 'apollo-server', 'next', 'nuxt',
-  'gatsby', 'vue', 'angular', 'svelte', 'electron', 'puppeteer', 'cheerio',
+  'gatsby', 'angular', 'svelte', 'electron', 'puppeteer', 'cheerio',
   'sharp', 'jimp', 'canvas', 'pdf-lib', 'exceljs', 'csv-parser', 'xml2js',
-  'yaml', 'ini', 'config', 'yargs', 'inquirer', 'ora', 'chalk', 'colors',
-  'winston', 'bunyan', 'pino', 'log4js', 'ramda', 'rxjs', 'immutable',
-  'mobx', 'redux', 'zustand', 'formik', 'yup', 'joi', 'ajv', 'validator',
+  'yaml', 'config', 'yargs', 'inquirer', 'ora', 'colors',
+  'winston', 'bunyan', 'pino', 'log4js', 'ramda', 'immutable',
+  'mobx', 'redux', 'zustand', 'formik', 'yup', 'ajv', 'validator',
   'date-fns', 'dayjs', 'luxon', 'numeral', 'accounting', 'currency.js',
   'lodash-es', 'core-js', 'regenerator-runtime', 'tslib', 'classnames',
-  'prop-types', 'cross-env', 'npm', 'yarn', 'pnpm', 'node-fetch', 'got'
+  'prop-types', 'cross-env', 'node-fetch', 'got'
 ];
 
-// Packages legitimes qui ressemblent a des populaires mais sont OK
+// Packages legitimes courts ou qui ressemblent a des populaires
 const WHITELIST = [
-  'acorn',
-  'acorn-walk',
-  'js-yaml',
-  'cross-env',
-  'node-fetch',
-  'node-gyp',
-  'core-js',
-  'lodash-es',
-  'date-fns',
-  'ts-node',
-  'ts-jest',
-  'css-loader',
-  'style-loader',
-  'file-loader',
-  'url-loader',
-  'babel-loader',
-  'vue-loader',
-  'react-dom',
-  'react-router',
-  'react-redux',
-  'vue-router',
-  'express-session',
-  'body-parser',
-  'cookie-parser'
+  // Packages tres courts legitimes
+  'qs', 'pg', 'ms', 'ws', 'ip', 'on', 'is', 'it', 'to', 'or', 'fs', 'os',
+  'co', 'q', 'n', 'i', 'a', 'v', 'x', 'y', 'z',
+  'ejs', 'nyc', 'ini', 'joi', 'vue', 'npm', 'got', 'ora',
+  'vary', 'mime', 'send', 'etag', 'raw', 'tar', 'uid', 'cjs',
+  'rxjs', 'yarn', 'pnpm',
+  
+  // Packages legitimes avec noms similaires
+  'acorn', 'acorn-walk', 'js-yaml', 'cross-env', 'node-fetch', 'node-gyp',
+  'core-js', 'lodash-es', 'date-fns', 'ts-node', 'ts-jest',
+  'css-loader', 'style-loader', 'file-loader', 'url-loader', 'babel-loader',
+  'vue-loader', 'react-dom', 'react-router', 'react-redux', 'vue-router',
+  'express-session', 'body-parser', 'cookie-parser',
+  
+  // Packages Express.js communs
+  'accepts', 'array-flatten', 'content-disposition', 'content-type',
+  'depd', 'destroy', 'encodeurl', 'escape-html', 'fresh', 'merge-descriptors',
+  'methods', 'on-finished', 'parseurl', 'path-to-regexp', 'proxy-addr',
+  'range-parser', 'safe-buffer', 'safer-buffer', 'setprototypeof',
+  'statuses', 'type-is', 'unpipe', 'utils-merge'
 ];
 
-// Techniques de typosquatting connues
-const TYPOSQUAT_PATTERNS = [
-  { type: 'missing_char', fn: (name) => generateMissingChar(name) },
-  { type: 'extra_char', fn: (name) => generateExtraChar(name) },
-  { type: 'swapped_chars', fn: (name) => generateSwappedChars(name) },
-  { type: 'wrong_char', fn: (name) => generateWrongChar(name) },
-  { type: 'hyphen_tricks', fn: (name) => generateHyphenTricks(name) },
-  { type: 'suffix_tricks', fn: (name) => generateSuffixTricks(name) }
-];
+// Seuil minimum de longueur pour eviter faux positifs
+const MIN_PACKAGE_LENGTH = 4;
 
 async function scanTyposquatting(targetPath) {
   const threats = [];
@@ -98,18 +87,24 @@ async function scanTyposquatting(targetPath) {
 
 function findTyposquatMatch(name) {
   // Ignore les packages whitelistes
-  if (WHITELIST.includes(name)) return null;
+  if (WHITELIST.includes(name.toLowerCase())) return null;
   
   // Ignore les packages scoped (@org/package)
   if (name.startsWith('@')) return null;
 
+  // Ignore les packages tres courts (trop de faux positifs)
+  if (name.length < MIN_PACKAGE_LENGTH) return null;
+
   for (const popular of POPULAR_PACKAGES) {
     // Ignore si c'est exactement le meme
-    if (name === popular) continue;
+    if (name.toLowerCase() === popular.toLowerCase()) continue;
 
-    const distance = levenshteinDistance(name, popular);
+    // Ignore si le package populaire est trop court
+    if (popular.length < MIN_PACKAGE_LENGTH) continue;
+
+    const distance = levenshteinDistance(name.toLowerCase(), popular.toLowerCase());
     
-    // Distance de 1 ou 2 = tres suspect
+    // Distance de 1 = tres suspect (une seule lettre de difference)
     if (distance === 1) {
       return {
         original: popular,
@@ -118,8 +113,8 @@ function findTyposquatMatch(name) {
       };
     }
 
-    // Distance de 2 avec nom court = suspect
-    if (distance === 2 && popular.length <= 6) {
+    // Distance de 2 seulement si le package est assez long (>= 8 chars)
+    if (distance === 2 && popular.length >= 8) {
       return {
         original: popular,
         type: detectTyposquatType(name, popular),
@@ -156,16 +151,21 @@ function detectTyposquatType(typo, original) {
 }
 
 function isSuffixTrick(name, popular) {
+  const nameLower = name.toLowerCase();
+  const popularLower = popular.toLowerCase();
+  
   const suffixes = ['-js', '.js', '-node', '-npm', '-cli', '-api', '-lib', '-pkg', '-dev', '-pro'];
   for (const suffix of suffixes) {
-    if (name === popular + suffix) return true;
-    if (name === popular.replace('-', '') + suffix) return true;
+    if (nameLower === popularLower + suffix) return true;
+    if (nameLower === popularLower.replace('-', '') + suffix) return true;
   }
+  
   // Verifie aussi les prefixes
   const prefixes = ['node-', 'npm-', 'js-', 'get-', 'the-'];
   for (const prefix of prefixes) {
-    if (name === prefix + popular) return true;
+    if (nameLower === prefix + popularLower) return true;
   }
+  
   return false;
 }
 
@@ -186,81 +186,15 @@ function levenshteinDistance(a, b) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
         matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
         );
       }
     }
   }
 
   return matrix[b.length][a.length];
-}
-
-// Generateurs pour tests (pas utilises dans le scan, mais utiles pour enrichir les IOCs)
-function generateMissingChar(name) {
-  const results = [];
-  for (let i = 0; i < name.length; i++) {
-    results.push(name.slice(0, i) + name.slice(i + 1));
-  }
-  return results;
-}
-
-function generateExtraChar(name) {
-  const results = [];
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789-';
-  for (let i = 0; i <= name.length; i++) {
-    for (const char of chars) {
-      results.push(name.slice(0, i) + char + name.slice(i));
-    }
-  }
-  return results;
-}
-
-function generateSwappedChars(name) {
-  const results = [];
-  for (let i = 0; i < name.length - 1; i++) {
-    const arr = name.split('');
-    [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
-    results.push(arr.join(''));
-  }
-  return results;
-}
-
-function generateWrongChar(name) {
-  const results = [];
-  const keyboard = {
-    'a': 'sqwz', 'b': 'vghn', 'c': 'xdfv', 'd': 'serfcx', 'e': 'wsdfr',
-    'f': 'drtgvc', 'g': 'ftyhbv', 'h': 'gyujnb', 'i': 'ujklo', 'j': 'huikmn',
-    'k': 'jiolm', 'l': 'kop', 'm': 'njk', 'n': 'bhjm', 'o': 'iklp',
-    'p': 'ol', 'q': 'wa', 'r': 'edft', 's': 'awedxz', 't': 'rfgy',
-    'u': 'yhji', 'v': 'cfgb', 'w': 'qase', 'x': 'zsdc', 'y': 'tghu', 'z': 'asx'
-  };
-  for (let i = 0; i < name.length; i++) {
-    const char = name[i].toLowerCase();
-    if (keyboard[char]) {
-      for (const replacement of keyboard[char]) {
-        results.push(name.slice(0, i) + replacement + name.slice(i + 1));
-      }
-    }
-  }
-  return results;
-}
-
-function generateHyphenTricks(name) {
-  const results = [];
-  // Ajouter des hyphens
-  for (let i = 1; i < name.length; i++) {
-    results.push(name.slice(0, i) + '-' + name.slice(i));
-  }
-  // Retirer des hyphens
-  results.push(name.replace(/-/g, ''));
-  return results;
-}
-
-function generateSuffixTricks(name) {
-  const suffixes = ['-js', '.js', '-node', '-npm', '-cli'];
-  return suffixes.map(s => name + s);
 }
 
 module.exports = { scanTyposquatting, levenshteinDistance };
