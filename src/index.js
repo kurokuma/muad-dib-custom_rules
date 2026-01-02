@@ -9,6 +9,7 @@ const { getPlaybook } = require('./response/playbooks.js');
 const { getRule } = require('./rules/index.js');
 const { saveReport } = require('./report.js');
 const { saveSARIF } = require('./sarif.js');
+const { scanTyposquatting } = require('./scanner/typosquat.js');
 
 async function run(targetPath, options = {}) {
   const threats = [];
@@ -33,6 +34,10 @@ async function run(targetPath, options = {}) {
 
   const dataflowThreats = await analyzeDataFlow(targetPath);
   threats.push(...dataflowThreats);
+
+  // Scan typosquatting
+  const typosquatThreats = await scanTyposquatting(targetPath);
+  threats.push(...typosquatThreats);
 
   // Enrichir chaque menace avec les regles
   const enrichedThreats = threats.map(t => {
