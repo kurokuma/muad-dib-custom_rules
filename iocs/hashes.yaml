@@ -212,9 +212,3 @@ files:
     confidence: high
     description: "Token stealer potentiel"
 
-  - id: FILE-GENERIC-003
-    name: "inject.js"
-    source: generic
-    severity: high
-    confidence: medium
-    description: "Code injection potentiel"

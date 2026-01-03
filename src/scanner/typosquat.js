@@ -59,8 +59,16 @@ const WHITELIST = [
   'rimraf', 'del', 'trash-cli',
   'globby', 'fast-glob', 'tiny-glob',
   'chokidar', 'watchpack', 'nsfw',
-  'dotenv', 'dotenv-expand', 'env-cmd'
+  'dotenv', 'dotenv-expand', 'env-cmd',
+
+  // Packages Vite et outils associes
+  'vite', 'vitest', 'vitepress',
+  'eslint-config-prettier', 'eslint-plugin-prettier',
+  'eslint-scope', 'eslint-visitor-keys',
+  'esbuild', 'esbuild-register',
+  'async', 'neo-async'
 ];
+
 
 // Seuil minimum de longueur pour eviter faux positifs
 const MIN_PACKAGE_LENGTH = 4;
