@@ -38,9 +38,9 @@ MUAD'DIB detects AND guides your response.
 | Feature | MUAD'DIB | Socket | Snyk | Opengrep |
 |---------|----------|--------|------|----------|
 | IOC Detection | Yes | Yes | Yes | No |
-| AST Analysis | Yes | Yes | No | Yes |
-| Dataflow Analysis | Yes | No | No | No |
-| Typosquatting Detection | Yes | Yes | No | No |
+| AST Analysis | Yes | Yes | Yes | Yes |
+| Dataflow Analysis | Yes | No | No | Yes |
+| Typosquatting Detection | Yes | Yes | Yes | No |
 | Response Playbooks | Yes | No | No | No |
 | Risk Score | Yes | Yes | Yes | No |
 | SARIF / GitHub Security | Yes | Yes | Yes | Yes |

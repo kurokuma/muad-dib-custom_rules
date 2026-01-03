@@ -29,22 +29,22 @@
 
 Les attaques supply chain npm explosent. Shai-Hulud a compromis 25K+ repos en 2025. Les outils existants detectent, mais n'aident pas a repondre.
 
-MUAD'DIB detecte ET guide la reponse.
+MUAD'DIB detects AND guides your response.
 
-| Feature | MUAD'DIB | Socket | Snyk |
-|---------|----------|--------|------|
-| Detection IOCs | Oui | Oui | Oui |
-| Analyse AST | Oui | Oui | Non |
-| Analyse Dataflow | Oui | Non | Non |
-| Detection Typosquatting | Oui | Oui | Non |
-| Playbooks reponse | Oui | Non | Non |
-| Score de risque | Oui | Oui | Oui |
-| SARIF / GitHub Security | Oui | Oui | Oui |
-| MITRE ATT&CK mapping | Oui | Non | Non |
-| Webhook Discord/Slack | Oui | Non | Non |
-| Extension VS Code | Oui | Oui | Oui |
-| Mode daemon | Oui | Non | Non |
-| 100% Open Source | Oui | Non | Non |
+| Feature | MUAD'DIB | Socket | Snyk | Opengrep |
+|---------|----------|--------|------|----------|
+| IOC Detection | Yes | Yes | Yes | No |
+| AST Analysis | Yes | Yes | Yes | Yes |
+| Dataflow Analysis | Yes | No | No | Yes |
+| Typosquatting Detection | Yes | Yes | Yes | No |
+| Response Playbooks | Yes | No | No | No |
+| Risk Score | Yes | Yes | Yes | No |
+| SARIF / GitHub Security | Yes | Yes | Yes | Yes |
+| MITRE ATT&CK Mapping | Yes | No | No | No |
+| Discord/Slack Webhooks | Yes | No | No | No |
+| VS Code Extension | Yes | Yes | Yes | No |
+| Daemon Mode | Yes | No | No | No |
+| 100% Open Source | Yes | No | No | Yes |
 
 ---
 
