@@ -25,13 +25,13 @@ async function fetchJSON(url, options = {}) {
         try {
           resolve({ status: res.statusCode, data: JSON.parse(data) });
         } catch (e) {
-          resolve({ status: res.statusCode, data: null, error: e.message });
+          resolve({ status: res.statusCode, data: null, raw: data, error: e.message });
         }
       });
     });
 
     req.on('error', reject);
-    req.setTimeout(10000, () => {
+    req.setTimeout(15000, () => {
       req.destroy();
       reject(new Error('Timeout'));
     });
@@ -44,8 +44,164 @@ async function fetchJSON(url, options = {}) {
   });
 }
 
+async function fetchText(url) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const reqOptions = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'MUADDIB-Scanner/1.0'
+      }
+    };
+
+    const req = https.request(reqOptions, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        resolve({ status: res.statusCode, data: data });
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(15000, () => {
+      req.destroy();
+      reject(new Error('Timeout'));
+    });
+    
+    req.end();
+  });
+}
+
 // ============================================
-// SOURCE 1: GitHub Security Advisories
+// SOURCE 1: Shai-Hulud 2.0 Detector (795+ packages)
+// ============================================
+async function scrapeShaiHuludDetector() {
+  console.log('[SCRAPER] Shai-Hulud 2.0 Detector (795+ packages)...');
+  const packages = [];
+  
+  try {
+    const url = 'https://raw.githubusercontent.com/gensecaihq/Shai-Hulud-2.0-Detector/main/compromised-packages.json';
+    const { status, data } = await fetchJSON(url);
+    
+    if (status === 200 && Array.isArray(data)) {
+      for (const pkg of data) {
+        packages.push({
+          id: `SHAI-HULUD-${pkg.name || pkg.package}`,
+          name: pkg.name || pkg.package,
+          version: pkg.version || pkg.versions || '*',
+          severity: 'critical',
+          confidence: 'high',
+          source: 'shai-hulud-detector',
+          description: pkg.description || 'Compromised by Shai-Hulud 2.0 supply chain attack',
+          references: ['https://github.com/gensecaihq/Shai-Hulud-2.0-Detector'],
+          mitre: 'T1195.002'
+        });
+      }
+    } else if (status === 200 && data && typeof data === 'object') {
+      // Si c'est un objet avec des packages dedans
+      const pkgList = data.packages || data.compromised || Object.values(data);
+      for (const pkg of pkgList) {
+        if (typeof pkg === 'string') {
+          packages.push({
+            id: `SHAI-HULUD-${pkg}`,
+            name: pkg,
+            version: '*',
+            severity: 'critical',
+            confidence: 'high',
+            source: 'shai-hulud-detector',
+            description: 'Compromised by Shai-Hulud 2.0 supply chain attack',
+            references: ['https://github.com/gensecaihq/Shai-Hulud-2.0-Detector'],
+            mitre: 'T1195.002'
+          });
+        } else if (pkg && pkg.name) {
+          packages.push({
+            id: `SHAI-HULUD-${pkg.name}`,
+            name: pkg.name,
+            version: pkg.version || '*',
+            severity: 'critical',
+            confidence: 'high',
+            source: 'shai-hulud-detector',
+            description: pkg.description || 'Compromised by Shai-Hulud 2.0 supply chain attack',
+            references: ['https://github.com/gensecaihq/Shai-Hulud-2.0-Detector'],
+            mitre: 'T1195.002'
+          });
+        }
+      }
+    }
+    
+    console.log(`[SCRAPER]   -> ${packages.length} packages trouves`);
+  } catch (e) {
+    console.log(`[SCRAPER]   -> Erreur: ${e.message}`);
+  }
+  
+  return packages;
+}
+
+// ============================================
+// SOURCE 2: Datadog IOCs (packages + hashes)
+// ============================================
+async function scrapeDatadogIOCs() {
+  console.log('[SCRAPER] Datadog Security Labs IOCs...');
+  const packages = [];
+  const hashes = [];
+  
+  try {
+    // Fetch packages CSV
+    const csvUrl = 'https://raw.githubusercontent.com/DataDog/indicators-of-compromise/main/shai-hulud-2.0/npm_packages.csv';
+    const csvResponse = await fetchText(csvUrl);
+    
+    if (csvResponse.status === 200 && csvResponse.data) {
+      const lines = csvResponse.data.split('\n').filter(l => l.trim());
+      // Skip header
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',');
+        if (parts.length >= 1) {
+          const name = parts[0].trim().replace(/"/g, '');
+          const version = parts[1] ? parts[1].trim().replace(/"/g, '') : '*';
+          if (name && name !== 'package' && name !== 'name') {
+            packages.push({
+              id: `DATADOG-${name}`,
+              name: name,
+              version: version || '*',
+              severity: 'critical',
+              confidence: 'high',
+              source: 'datadog-ioc',
+              description: 'Compromised package identified by Datadog Security Labs',
+              references: ['https://securitylabs.datadoghq.com/articles/shai-hulud-2.0-npm-worm/'],
+              mitre: 'T1195.002'
+            });
+          }
+        }
+      }
+    }
+    
+    console.log(`[SCRAPER]   -> ${packages.length} packages trouves`);
+    
+    // Fetch SHA256 hashes
+    const hashUrl = 'https://raw.githubusercontent.com/DataDog/indicators-of-compromise/main/shai-hulud-2.0/sha256_hashes.txt';
+    const hashResponse = await fetchText(hashUrl);
+    
+    if (hashResponse.status === 200 && hashResponse.data) {
+      const lines = hashResponse.data.split('\n').filter(l => l.trim());
+      for (const line of lines) {
+        const hash = line.trim();
+        if (hash && hash.length === 64 && /^[a-f0-9]+$/i.test(hash)) {
+          hashes.push(hash.toLowerCase());
+        }
+      }
+      console.log(`[SCRAPER]   -> ${hashes.length} hashes trouves`);
+    }
+  } catch (e) {
+    console.log(`[SCRAPER]   -> Erreur: ${e.message}`);
+  }
+  
+  return { packages, hashes };
+}
+
+// ============================================
+// SOURCE 3: GitHub Security Advisories
 // ============================================
 async function scrapeGitHubAdvisories() {
   console.log('[SCRAPER] GitHub Security Advisories...');
@@ -89,24 +245,20 @@ async function scrapeGitHubAdvisories() {
 }
 
 // ============================================
-// SOURCE 2: OSV.dev (Open Source Vulnerabilities)
+// SOURCE 4: OSV.dev (Open Source Vulnerabilities)
 // ============================================
 async function scrapeOSV() {
   console.log('[SCRAPER] OSV.dev...');
   const packages = [];
   
   try {
-    const queries = [
-      { package: { ecosystem: 'npm' }, query: 'malware' },
-      { package: { ecosystem: 'npm' }, query: 'malicious' },
-      { package: { ecosystem: 'npm' }, query: 'typosquat' }
-    ];
+    const queries = ['malware', 'malicious', 'supply chain'];
     
     for (const q of queries) {
       const { status, data } = await fetchJSON('https://api.osv.dev/v1/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: { package: q.package }
+        body: { package: { ecosystem: 'npm' } }
       });
       
       if (status === 200 && data?.vulns) {
@@ -138,7 +290,7 @@ async function scrapeOSV() {
 }
 
 // ============================================
-// SOURCE 3: Socket.dev reports
+// SOURCE 5: Socket.dev reports (static list)
 // ============================================
 async function scrapeSocketReports() {
   console.log('[SCRAPER] Socket.dev reports...');
@@ -196,7 +348,7 @@ async function scrapeSocketReports() {
 }
 
 // ============================================
-// SOURCE 4: Phylum Research
+// SOURCE 6: Phylum Research
 // ============================================
 async function scrapePhylum() {
   console.log('[SCRAPER] Phylum Research...');
@@ -235,7 +387,7 @@ async function scrapePhylum() {
 }
 
 // ============================================
-// SOURCE 5: npm removed packages
+// SOURCE 7: npm removed packages
 // ============================================
 async function scrapeNpmRemoved() {
   console.log('[SCRAPER] npm removed packages...');
@@ -273,58 +425,9 @@ async function scrapeNpmRemoved() {
   return packages;
 }
 
-// ============================================
-// SOURCE 6: Typosquats generator
-// ============================================
-async function generateTyposquats() {
-  console.log('[SCRAPER] Typosquats generation...');
-  const packages = [];
-  
-  const typosquatMap = {
-    'lodash': ['lodahs', 'lodasg', 'lodash-', '-lodash', 'lodas', 'lodashh'],
-    'express': ['expres', 'expresss', 'exprees', 'exprss', 'exppress'],
-    'react': ['recat', 'reactt', 'reacct', 'raect', 'reactjs-', 'reakt'],
-    'axios': ['axois', 'axio', 'axioss', 'axiso', 'axius'],
-    'moment': ['momnet', 'monment', 'momment', 'momet', 'momentt'],
-    'chalk': ['chalks', 'chalkk', 'chlak', 'chalck'],
-    'commander': ['comander', 'commanderr', 'comandr'],
-    'webpack': ['webpck', 'webpak', 'weback', 'webpackk'],
-    'typescript': ['typscript', 'typsecript', 'typescrip', 'typescipt'],
-    'eslint': ['eslit', 'eslnt', 'esllint', 'eslintjs'],
-    'prettier': ['pretier', 'pretiier', 'prittier', 'prettir'],
-    'mongoose': ['mongose', 'mongoos', 'mongoosee', 'mongooose'],
-    'electron': ['electorn', 'electrn', 'elctron', 'elecrton'],
-    'puppeteer': ['pupeteer', 'puppetter', 'pupetear', 'puppetee'],
-    'dotenv': ['dotevn', 'doteenv', 'dotnev', 'dotenv-'],
-    'uuid': ['uuidd', 'uudi', 'uud', 'uuid-js'],
-    'bcrypt': ['bcript', 'bcryt', 'bcrytp', 'bycrpt'],
-    'jsonwebtoken': ['jsonwebtokn', 'jsonwebtoke', 'jwttoken'],
-    'nodemailer': ['nodemailr', 'nodemailler', 'nodemalier'],
-    'socket.io': ['socketio', 'socet.io', 'socket-io-', 'soket.io']
-  };
-  
-  for (const [original, typos] of Object.entries(typosquatMap)) {
-    for (const typo of typos) {
-      packages.push({
-        id: `TYPO-${typo}`,
-        name: typo,
-        version: '*',
-        severity: 'high',
-        confidence: 'medium',
-        source: 'typosquat-db',
-        description: `Potential typosquat of "${original}"`,
-        references: [],
-        mitre: 'T1195.002'
-      });
-    }
-  }
-  
-  console.log(`[SCRAPER]   -> ${packages.length} packages trouves`);
-  return packages;
-}
 
 // ============================================
-// SOURCE 7: AlienVault OTX
+// SOURCE 9: AlienVault OTX
 // ============================================
 async function scrapeAlienVault() {
   console.log('[SCRAPER] AlienVault OTX...');
@@ -343,7 +446,6 @@ async function scrapeAlienVault() {
             for (const indicator of pulse.indicators) {
               if (indicator.type === 'hostname' || indicator.type === 'domain' || indicator.type === 'FileHash-SHA256') {
                 const name = indicator.indicator;
-                // Filtre pour noms de packages npm potentiels
                 if (name && !name.includes('.') && !name.includes('/') && name.length > 2 && name.length < 50) {
                   packages.push({
                     id: `OTX-${pulse.id}-${name.slice(0, 20)}`,
@@ -373,7 +475,7 @@ async function scrapeAlienVault() {
 }
 
 // ============================================
-// SOURCE 8: Aikido Intel (leur feed public)
+// SOURCE 10: Aikido Intel
 // ============================================
 async function scrapeAikidoIntel() {
   console.log('[SCRAPER] Aikido Intel...');
@@ -412,7 +514,7 @@ async function scrapeAikidoIntel() {
 // ============================================
 async function runScraper() {
   console.log('\n╔════════════════════════════════════════════╗');
-  console.log('║      MUAD\'DIB IOC Scraper                  ║');
+  console.log('║      MUAD\'DIB IOC Scraper v2.0             ║');
   console.log('╚════════════════════════════════════════════╝\n');
   
   let existingIOCs = { packages: [], hashes: [], markers: [], files: [] };
@@ -421,41 +523,87 @@ async function runScraper() {
   }
   
   const existingNames = new Set(existingIOCs.packages.map(p => p.name));
+  const existingHashes = new Set(existingIOCs.hashes || []);
   const initialCount = existingIOCs.packages.length;
+  const initialHashCount = existingIOCs.hashes?.length || 0;
   
-  const results = await Promise.all([
-    scrapeGitHubAdvisories(),
-    scrapeOSV(),
-    scrapeSocketReports(),
-    scrapePhylum(),
-    scrapeNpmRemoved(),
-    generateTyposquats(),
-    scrapeAlienVault(),
-    scrapeAikidoIntel()
-  ]);
+  // Scrape all sources
+const [
+  shaiHuludPackages,
+  datadogResult,
+  githubPackages,
+  osvPackages,
+  socketPackages,
+  phylumPackages,
+  npmRemovedPackages,
+  alienVaultPackages,
+  aikidoPackages
+] = await Promise.all([
+  scrapeShaiHuludDetector(),
+  scrapeDatadogIOCs(),
+  scrapeGitHubAdvisories(),
+  scrapeOSV(),
+  scrapeSocketReports(),
+  scrapePhylum(),
+  scrapeNpmRemoved(),
+  scrapeAlienVault(),
+  scrapeAikidoIntel()
+]);
+
+// Merge all packages
+const allPackages = [
+  ...shaiHuludPackages,
+  ...datadogResult.packages,
+  ...githubPackages,
+  ...osvPackages,
+  ...socketPackages,
+  ...phylumPackages,
+  ...npmRemovedPackages,
+  ...alienVaultPackages,
+  ...aikidoPackages
+];
   
-  let added = 0;
-  for (const pkgList of results) {
-    for (const pkg of pkgList) {
-      if (!existingNames.has(pkg.name)) {
-        existingIOCs.packages.push(pkg);
-        existingNames.add(pkg.name);
-        added++;
-      }
+  let addedPackages = 0;
+  for (const pkg of allPackages) {
+    if (!existingNames.has(pkg.name)) {
+      existingIOCs.packages.push(pkg);
+      existingNames.add(pkg.name);
+      addedPackages++;
     }
   }
   
+  // Merge hashes from Datadog
+  let addedHashes = 0;
+  for (const hash of datadogResult.hashes || []) {
+    if (!existingHashes.has(hash)) {
+      existingIOCs.hashes = existingIOCs.hashes || [];
+      existingIOCs.hashes.push(hash);
+      existingHashes.add(hash);
+      addedHashes++;
+    }
+  }
+  
+  // Save
+  existingIOCs.updated = new Date().toISOString();
   fs.writeFileSync(IOC_FILE, JSON.stringify(existingIOCs, null, 2));
   
   console.log('\n╔════════════════════════════════════════════╗');
   console.log('║      Resultats                             ║');
   console.log('╚════════════════════════════════════════════╝');
-  console.log(`  IOCs avant:     ${initialCount}`);
-  console.log(`  Nouveaux:       ${added}`);
-  console.log(`  Total:          ${existingIOCs.packages.length}`);
-  console.log(`  Fichier:        ${IOC_FILE}\n`);
+  console.log(`  Packages avant:  ${initialCount}`);
+  console.log(`  Packages apres:  ${existingIOCs.packages.length}`);
+  console.log(`  Nouveaux:        +${addedPackages}`);
+  console.log(`  Hashes avant:    ${initialHashCount}`);
+  console.log(`  Hashes apres:    ${existingIOCs.hashes?.length || 0}`);
+  console.log(`  Nouveaux:        +${addedHashes}`);
+  console.log(`  Fichier:         ${IOC_FILE}\n`);
   
-  return { added, total: existingIOCs.packages.length };
+  return { 
+    added: addedPackages, 
+    total: existingIOCs.packages.length,
+    addedHashes: addedHashes,
+    totalHashes: existingIOCs.hashes?.length || 0
+  };
 }
 
 module.exports = { runScraper };

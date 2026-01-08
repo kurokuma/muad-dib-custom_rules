@@ -161,7 +161,7 @@ function isLegitimateVariant(name) {
   const legitimateSuffixes = [
     '-cli', '-core', '-utils', '-plugin', '-loader', '-webpack',
     '-react', '-vue', '-angular', '-node', '-browser',
-    '-esm', '-cjs', '-umd',
+    '-esm', '-cjs', '-umd', '-vite',
     '-types', '-typings',
     '2', '3', '4', '5', // versions majeures (mysql2, etc)
     '-v2', '-v3', '-next', '-latest', '-stable', '-lts'

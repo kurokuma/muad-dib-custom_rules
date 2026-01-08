@@ -2,17 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const { loadCachedIOCs } = require('../ioc/updater.js');
 
-// Packages legitimes avec lifecycle scripts
+// Packages legitimes avec lifecycle scripts (ne pas alerter)
 const TRUSTED_PACKAGES = [
   'esbuild', 'sharp', 'bcrypt', 'node-sass', 'puppeteer',
   'playwright', 'sqlite3', 'better-sqlite3', 'canvas',
-  'grpc', 'fsevents', 'msgpackr-extract', 'lmdb'
+  'grpc', 'fsevents', 'msgpackr-extract', 'lmdb', 'parcel',
+  'electron', 'node-gyp', 'prebuild-install', 'nan'
 ];
 
 // Fichiers legitimes qui ressemblent a des fichiers suspects
 const SAFE_FILES = {
-  'inject.js': ['async', 'awilix', 'inversify'],
-  'install.js': ['esbuild', 'sharp', 'bcrypt', 'node-sass', 'puppeteer', 'playwright']
+  'inject.js': ['async', 'awilix', 'inversify', 'bottlejs'],
+  'install.js': ['esbuild', 'sharp', 'bcrypt', 'node-sass', 'puppeteer', 'playwright', 'electron']
 };
 
 async function scanDependencies(targetPath) {
@@ -27,11 +28,12 @@ async function scanDependencies(targetPath) {
   const packages = listPackages(nodeModulesPath);
 
   for (const pkg of packages) {
-    // Verifie si package connu malveillant (IOCs caches) avec VERSION
+    // Verifie si package connu malveillant (IOCs caches) AVEC VERSION
     const maliciousPkg = iocs.packages.find(p => {
       if (p.name !== pkg.name) return false;
-      // Si version "*" = toutes versions, sinon compare
+      // Si version "*" dans IOC = toutes versions sont malveillantes
       if (p.version === '*') return true;
+      // Sinon compare la version exacte
       return p.version === pkg.version;
     });
     
@@ -39,11 +41,14 @@ async function scanDependencies(targetPath) {
       threats.push({
         type: 'known_malicious_package',
         severity: 'CRITICAL',
-        message: `Package malveillant connu: ${pkg.name}@${pkg.version} (source: ${maliciousPkg.source})`,
+        message: `Package malveillant connu: ${pkg.name}@${maliciousPkg.version} (source: ${maliciousPkg.source})`,
         file: `node_modules/${pkg.name}`
       });
       continue;
     }
+
+    // Skip trusted packages pour les checks suivants
+    if (TRUSTED_PACKAGES.includes(pkg.name)) continue;
 
     // Verifie les fichiers suspects (IOCs caches) avec whitelist
     for (const suspFile of iocs.files || []) {
@@ -63,9 +68,7 @@ async function scanDependencies(targetPath) {
       }
     }
 
-    // Verifie les lifecycle scripts (skip packages trusted)
-    if (TRUSTED_PACKAGES.includes(pkg.name)) continue;
-    
+    // Verifie les lifecycle scripts
     const pkgJsonPath = path.join(pkg.path, 'package.json');
     if (fs.existsSync(pkgJsonPath)) {
       try {
@@ -85,15 +88,8 @@ async function scanDependencies(targetPath) {
           }
         }
 
-        // Verifie les lifecycle scripts (seulement si pas trusted)
-        if (scripts.preinstall || scripts.postinstall) {
-          threats.push({
-            type: 'lifecycle_script_dependency',
-            severity: 'LOW',
-            message: `Dependance "${pkg.name}" a un script ${scripts.preinstall ? 'preinstall' : 'postinstall'}`,
-            file: `node_modules/${pkg.name}/package.json`
-          });
-        }
+        // Note: on ne signale plus les lifecycle scripts des dependances
+        // Trop de faux positifs (esbuild, sharp, etc.)
       } catch (e) {
         // JSON parse error, skip
       }
