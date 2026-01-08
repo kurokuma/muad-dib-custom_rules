@@ -1,7 +1,4 @@
-# MUAD'DIB IOCs - Builtin (fallback si pas de connexion)
-# Ces IOCs sont inclus dans le package npm
-
-version: "1.0.0"
+version: "1.1.0"
 updated: "2026-01-08"
 
 packages:
@@ -45,10 +42,11 @@ packages:
     version: "*"
     source: shai-hulud-v2
 
-  # Shai-Hulud v3 Golden Path (decembre 2025)
+  # Shai-Hulud v3 Golden Path (28 decembre 2025)
   - name: "@vietmoney/react-big-calendar"
     version: "0.26.2"
     source: shai-hulud-v3
+    description: "First confirmed v3 payload - testing phase"
 
   # Attaques historiques
   - name: "flatmap-stream"
@@ -96,11 +94,20 @@ packages:
     source: typosquat
 
 files:
+  # Shai-Hulud v2
   - setup_bun.js
   - bun_environment.js
   - node-gyp.dll
+  # Shai-Hulud v3 (nouveaux noms)
+  - bun_installer.js
+  - environment_source.js
+  # Artefacts exfiltration v3
+  - 3nvir0nm3nt.json
+  - c9nt3nts.json
+  - c0nt3nts.json
 
 hashes:
+  # Shai-Hulud v2 payloads
   - "62ee164b9b306250c1172583f138c9614139264f889fa99614903c12755468d0"
   - "cbb9bc5a8496243e02f3cc080efbe3e4a1430ba0671f2e43a202bf45b05479cd"
   - "f099c5d9ec417d4445a0328ac0ada9cde79fc37410914103ae9c609cbc0ee068"
@@ -108,9 +115,15 @@ hashes:
   - "4b2399646573bb737c4969563303d8ee2e9ddbd1b271f1ca9e35ea78062538db"
 
 markers:
+  # Shai-Hulud v1/v2
   - "Shai-Hulud"
   - "Sha1-Hulud"
   - "The Second Coming"
+  # Shai-Hulud v3
   - "Goldox-T3chs"
+  - "Only Happy Girl"
+  - "SHA1HULUD"
+  # Protestware
   - "peacenotwar"
+  # Generic malicious
   - "/dev/tcp"
