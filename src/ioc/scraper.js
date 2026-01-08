@@ -3,6 +3,18 @@ const fs = require('fs');
 const path = require('path');
 
 const IOC_FILE = path.join(__dirname, '../../data/iocs.json');
+const STATIC_IOCS_FILE = path.join(__dirname, '../../data/static-iocs.json');
+
+function loadStaticIOCs() {
+  try {
+    if (fs.existsSync(STATIC_IOCS_FILE)) {
+      return JSON.parse(fs.readFileSync(STATIC_IOCS_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.log(`[WARN] Erreur chargement static-iocs.json: ${e.message}`);
+  }
+  return { socket: [], phylum: [], npmRemoved: [] };
+}
 
 async function fetchJSON(url, options = {}) {
   return new Promise((resolve, reject) => {
@@ -290,46 +302,14 @@ async function scrapeOSV() {
 }
 
 // ============================================
-// SOURCE 5: Socket.dev reports (static list)
+// SOURCE 5: Socket.dev reports (from static file)
 // ============================================
 async function scrapeSocketReports() {
   console.log('[SCRAPER] Socket.dev reports...');
   const packages = [];
+  const staticIOCs = loadStaticIOCs();
   
-  const socketMalicious = [
-    { name: '@pnpm.exe/pnpm', severity: 'critical', source: 'socket-shai-hulud' },
-    { name: '@nicklason/npm', severity: 'critical', source: 'socket-shai-hulud' },
-    { name: 'bb-builder', severity: 'critical', source: 'socket-shai-hulud' },
-    { name: 'codespaces-blank', severity: 'critical', source: 'socket-shai-hulud' },
-    { name: 'crypto-browserify-aes', severity: 'critical', source: 'socket-crypto-stealer' },
-    { name: 'eth-wallet-gen', severity: 'critical', source: 'socket-crypto-stealer' },
-    { name: 'solana-wallet-tools', severity: 'critical', source: 'socket-crypto-stealer' },
-    { name: 'discord-selfbot-tools', severity: 'critical', source: 'socket-discord-stealer' },
-    { name: 'discord-selfbot-v13', severity: 'critical', source: 'socket-discord-stealer' },
-    { name: 'discord-token-grabber', severity: 'critical', source: 'socket-discord-stealer' },
-    { name: 'discordbot-tokens', severity: 'critical', source: 'socket-discord-stealer' },
-    { name: 'electorn', severity: 'high', source: 'socket-typosquat' },
-    { name: 'electrn', severity: 'high', source: 'socket-typosquat' },
-    { name: 'reqeusts', severity: 'high', source: 'socket-typosquat' },
-    { name: 'requets', severity: 'high', source: 'socket-typosquat' },
-    { name: 'requsests', severity: 'high', source: 'socket-typosquat' },
-    { name: 'axois', severity: 'high', source: 'socket-typosquat' },
-    { name: 'axio', severity: 'high', source: 'socket-typosquat' },
-    { name: 'lodahs', severity: 'high', source: 'socket-typosquat' },
-    { name: 'lodasg', severity: 'high', source: 'socket-typosquat' },
-    { name: 'expres', severity: 'high', source: 'socket-typosquat' },
-    { name: 'expresss', severity: 'high', source: 'socket-typosquat' },
-    { name: 'momnet', severity: 'high', source: 'socket-typosquat' },
-    { name: 'monment', severity: 'high', source: 'socket-typosquat' },
-    { name: 'recat', severity: 'high', source: 'socket-typosquat' },
-    { name: 'reactt', severity: 'high', source: 'socket-typosquat' },
-    { name: 'chalks', severity: 'high', source: 'socket-typosquat' },
-    { name: 'chalkk', severity: 'high', source: 'socket-typosquat' },
-    { name: 'styled-components-native', severity: 'high', source: 'socket-protestware' },
-    { name: 'es5-ext', severity: 'medium', source: 'socket-protestware' }
-  ];
-  
-  for (const pkg of socketMalicious) {
+  for (const pkg of staticIOCs.socket || []) {
     packages.push({
       id: `SOCKET-${pkg.name}`,
       name: pkg.name,
@@ -337,7 +317,7 @@ async function scrapeSocketReports() {
       severity: pkg.severity,
       confidence: 'high',
       source: pkg.source,
-      description: `Malicious package reported by Socket.dev`,
+      description: 'Malicious package reported by Socket.dev',
       references: ['https://socket.dev/npm/package/' + pkg.name],
       mitre: 'T1195.002'
     });
@@ -348,27 +328,14 @@ async function scrapeSocketReports() {
 }
 
 // ============================================
-// SOURCE 6: Phylum Research
+// SOURCE 6: Phylum Research (from static file)
 // ============================================
 async function scrapePhylum() {
   console.log('[SCRAPER] Phylum Research...');
   const packages = [];
+  const staticIOCs = loadStaticIOCs();
   
-  const phylumMalicious = [
-    { name: '@nicklason/npm-register', severity: 'critical' },
-    { name: 'lemaaa', severity: 'critical' },
-    { name: 'badshell', severity: 'critical' },
-    { name: 'node-shell', severity: 'critical' },
-    { name: 'reverse-shell-as-a-service', severity: 'critical' },
-    { name: 'browserify-sign-steal', severity: 'critical' },
-    { name: 'npm-script-demo', severity: 'high' },
-    { name: 'load-from-cwd-or-npm', severity: 'high' },
-    { name: 'loadyaml-', severity: 'high' },
-    { name: 'preinstall-script', severity: 'high' },
-    { name: 'postinstall-script', severity: 'high' }
-  ];
-  
-  for (const pkg of phylumMalicious) {
+  for (const pkg of staticIOCs.phylum || []) {
     packages.push({
       id: `PHYLUM-${pkg.name}`,
       name: pkg.name,
@@ -376,7 +343,7 @@ async function scrapePhylum() {
       severity: pkg.severity,
       confidence: 'high',
       source: 'phylum',
-      description: `Malicious package reported by Phylum Research`,
+      description: 'Malicious package reported by Phylum Research',
       references: ['https://blog.phylum.io'],
       mitre: 'T1195.002'
     });
@@ -387,27 +354,14 @@ async function scrapePhylum() {
 }
 
 // ============================================
-// SOURCE 7: npm removed packages
+// SOURCE 7: npm removed packages (from static file)
 // ============================================
 async function scrapeNpmRemoved() {
   console.log('[SCRAPER] npm removed packages...');
   const packages = [];
+  const staticIOCs = loadStaticIOCs();
   
-  const removedPackages = [
-    { name: 'event-stream', version: '3.3.6', reason: 'Malicious code injection' },
-    { name: 'flatmap-stream', version: '0.1.1', reason: 'Bitcoin wallet stealer' },
-    { name: 'eslint-scope', version: '3.7.2', reason: 'npm token stealer' },
-    { name: 'eslint-config-eslint', version: '5.0.2', reason: 'npm token stealer' },
-    { name: 'getcookies', version: '*', reason: 'Backdoor' },
-    { name: 'mailparser', version: '2.0.5', reason: 'Malicious code' },
-    { name: 'bootstrap-sass', version: '3.4.1', reason: 'Backdoor injection' },
-    { name: 'twilio-npm', version: '*', reason: 'Typosquat malware' },
-    { name: 'discord.js-self', version: '*', reason: 'Token stealer' },
-    { name: 'fallguys', version: '*', reason: 'Malware' },
-    { name: 'am-i-going-to-miss-my-flight', version: '*', reason: 'Test malware' }
-  ];
-  
-  for (const pkg of removedPackages) {
+  for (const pkg of staticIOCs.npmRemoved || []) {
     packages.push({
       id: `NPM-REMOVED-${pkg.name}`,
       name: pkg.name,
