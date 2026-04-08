@@ -11,6 +11,7 @@ const { scanTyposquatting, findPyPITyposquatMatch } = require('../scanner/typosq
 const { scanGitHubActions } = require('../scanner/github-actions.js');
 const { scanEntropy } = require('../scanner/entropy.js');
 const { scanAIConfig } = require('../scanner/ai-config.js');
+const { scanCustomPatterns } = require('../scanner/custom-pattern.js');
 const { deobfuscate } = require('../scanner/deobfuscate.js');
 const { buildModuleGraph, annotateTaintedExports, detectCrossFileFlows, annotateSinkExports, detectCallbackCrossFileFlows, detectEventEmitterFlows } = require('../scanner/module-graph');
 const { loadCachedIOCs, checkIOCStaleness } = require('../ioc/updater.js');
@@ -183,7 +184,7 @@ async function execute(targetPath, options, pythonDeps, warnings) {
     'scanPackageJson', 'scanShellScripts', 'analyzeAST', 'detectObfuscation',
     'scanDependencies', 'scanHashes', 'analyzeDataFlow', 'scanTyposquatting',
     'scanGitHubActions', 'matchPythonIOCs', 'checkPyPITyposquatting',
-    'scanEntropy', 'scanAIConfig'
+    'scanEntropy', 'scanAIConfig', 'scanCustomPatterns'
   ];
 
   const settledResults = await Promise.allSettled([
@@ -199,7 +200,8 @@ async function execute(targetPath, options, pythonDeps, warnings) {
     yieldThen(() => matchPythonIOCs(pythonDeps, targetPath)),
     yieldThen(() => checkPyPITyposquatting(pythonDeps, targetPath)),
     withTimeout(() => scanEntropy(targetPath, { entropyThreshold: options.entropyThreshold || undefined }), 'scanEntropy'),
-    yieldThen(() => scanAIConfig(targetPath))
+    yieldThen(() => scanAIConfig(targetPath)),
+    yieldThen(() => scanCustomPatterns(targetPath, options.customRules || []))
   ]);
 
   // Extract results: use empty array for rejected scanners, log errors
@@ -224,7 +226,8 @@ async function execute(targetPath, options, pythonDeps, warnings) {
     pythonThreats,
     pypiTyposquatThreats,
     entropyThreats,
-    aiConfigThreats
+    aiConfigThreats,
+    customRuleThreats
   ] = scanResult;
 
   // Emit warning if file count cap was hit + quick-scan overflow files
@@ -282,6 +285,7 @@ async function execute(targetPath, options, pythonDeps, warnings) {
     ...pypiTyposquatThreats,
     ...entropyThreats,
     ...aiConfigThreats,
+    ...customRuleThreats,
     ...crossFileFlows.filter(f => f && f.sourceFile && f.sinkFile).map(f => ({
       type: f.type,
       severity: f.severity,

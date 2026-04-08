@@ -60,6 +60,7 @@ let noDeobfuscate = false;
 let noModuleGraph = false;
 let noReachability = false;
 let configPath = null;
+let rulesDirs = [];
 let autoSandbox = false;
 let feedLimit = null;
 let feedSeverity = null;
@@ -163,6 +164,14 @@ for (let i = 0; i < options.length; i++) {
       process.exit(1);
     }
     configPath = cfgPath;
+    i++;
+  } else if (options[i] === '--rules-dir') {
+    const rulesDir = options[i + 1];
+    if (!rulesDir || rulesDir.startsWith('-')) {
+      console.error('[ERROR] --rules-dir requires a directory path argument');
+      process.exit(1);
+    }
+    rulesDirs.push(rulesDir);
     i++;
   } else if (options[i] === '--auto-sandbox') {
     autoSandbox = true;
@@ -269,6 +278,7 @@ if (command === 'version' || command === '--version' || command === '-v') {
     noModuleGraph: noModuleGraph,
     noReachability: noReachability,
     configPath: configPath,
+    rulesDirs: rulesDirs,
     autoSandbox: autoSandbox
   }).then(exitCode => {
     // Use process.exitCode instead of process.exit() to let pending async work

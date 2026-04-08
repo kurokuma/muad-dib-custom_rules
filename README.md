@@ -115,6 +115,19 @@ muaddib scan . --html report.html        # HTML
 muaddib scan . --sarif results.sarif     # SARIF (GitHub Security)
 ```
 
+`--json` prints only the JSON result object. Scan-time warnings, progress lines, and other non-JSON messages are suppressed so redirection like `muaddib scan . --json > results.json` stays valid.
+
+### Custom rules
+
+```bash
+muaddib scan .                           # Auto-loads ./custom-rules if present
+muaddib scan . --rules-dir ./team-rules  # Add another rules directory
+muaddib scan . --rules-dir ./custom-rules --rules-dir ./team-rules
+```
+
+MUAD'DIB can load user-defined external pattern-matching rules from `custom-rules/` without changing the built-in scanners. Missing rule directories are ignored.
+For npm-focused starter rules, copy the sample files from `custom_rule/` into your target project's `custom-rules/` directory.
+
 ### Severity threshold
 
 ```bash
@@ -307,6 +320,139 @@ repos:
 > - ADR measured with global threshold (score >= 20) as of v2.6.5
 
 See [Evaluation Methodology](docs/EVALUATION_METHODOLOGY.md) for the full experimental protocol, holdout history, and Datadog benchmark details.
+
+---
+
+## Custom Rules
+
+Custom rules are a small external pattern-matching subsystem for project-local or team-shared detections.
+
+- Default directory: `custom-rules/` inside the scanned target
+- Additional directories: `--rules-dir <path>` (repeatable)
+- Supported files: `*.yaml`, `*.yml`, `*.json`
+- Loading is recursive
+- Invalid files or invalid rules are skipped with warnings
+- This is not full YARA or full Sigma support
+- v1 is string/regex matching only
+- Findings are included in the normal scan output, explain mode, scoring, and JSON output
+
+### Supported targets
+
+- `file_content`: text-like file contents
+- `filename`: normalized relative file path
+- `package_json_field`: dotted fields from `package.json`, such as `scripts.postinstall`
+
+### Supported match types
+
+- `regex`
+- `contains`
+- `contains_any`
+- `contains_all`
+
+### Rule file format
+
+```yaml
+rules:
+  - id: CUSTOM-STR-001
+    name: Suspicious eval with base64
+    severity: high
+    confidence: medium
+    target: file_content
+    file_glob:
+      - "**/*.js"
+    exclude_glob:
+      - "**/test/**"
+      - "**/docs/**"
+    match:
+      type: regex
+      pattern: "(eval\\s*\\(|Function\\s*\\().{0,200}(atob|Buffer\\.from\\([^\\)]*base64)"
+      flags: "is"
+    description: "eval/function use near base64 decoding"
+    mitre: T1059
+    references:
+      - "https://attack.mitre.org/techniques/T1059/"
+
+  - id: CUSTOM-PKG-001
+    name: Suspicious postinstall downloader
+    target: package_json_field
+    field: "scripts.postinstall"
+    match:
+      type: regex
+      pattern: "curl|wget|powershell|Invoke-Expression"
+      flags: "i"
+
+  - id: CUSTOM-FILE-001
+    name: Suspicious filename
+    target: filename
+    match:
+      type: regex
+      pattern: "setup_bun\\.js|preinstall\\.js"
+      flags: "i"
+```
+
+### Schema
+
+- `id`: required string
+- `name`: required string
+- `severity`: optional, default `medium`
+- `confidence`: optional, default `medium`
+- `description`: optional string
+- `mitre`: optional string
+- `references`: optional array of strings
+- `target`: required enum `file_content | filename | package_json_field`
+- `file_glob`: optional array of globs
+- `exclude_glob`: optional array of globs
+- `field`: required only for `package_json_field`
+- `match`: required object
+
+For `regex`:
+- `pattern`: required string
+- `flags`: optional string
+
+For `contains`:
+- `pattern`: required string
+
+For `contains_any` and `contains_all`:
+- `patterns`: required array of strings
+
+### Example layout
+
+```text
+custom-rules/
+  content-rules.yaml
+  package-rules.json
+  team/
+    filename-rules.yaml
+```
+
+### npm sample rules
+
+The repository includes npm-oriented starter rules under `custom_rule/`:
+
+```text
+custom_rule/
+  npm-content-rules.yaml
+  npm-package-rules.json
+  npm-filename-rules.yaml
+```
+
+Typical setup:
+
+```bash
+mkdir -p custom-rules
+cp custom_rule/* custom-rules/
+muaddib scan .
+```
+
+Sample files are also included under `examples/custom-rules/`.
+
+### Limitations
+
+- No YARA compatibility layer
+- No Sigma compatibility layer
+- No AST DSL, taint DSL, or dataflow DSL in v1
+- `file_content` only scans reasonably text-like files
+- `package_json_field` only matches fields that resolve to strings
 
 ---
 

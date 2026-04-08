@@ -1,0 +1,14 @@
+rules:
+  - id: CUSTOM-NPM-STR-TEST-001
+    name: Curl pipe bash
+    severity: critical
+    confidence: high
+    target: file_content
+    file_glob:
+      - "**/*.js"
+    match:
+      type: contains_all
+      patterns:
+        - "curl"
+        - "|bash"
+    description: "curl piped to bash in npm package files"

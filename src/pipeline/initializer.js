@@ -6,6 +6,8 @@ const { checkIOCStaleness } = require('../ioc/updater.js');
 const { resolveConfig } = require('../config.js');
 const { applyConfigOverrides } = require('../scoring.js');
 const { setMaxFileSize } = require('../shared/constants.js');
+const { loadCustomRules } = require('../rules/custom-loader.js');
+const { registerCustomRules } = require('../rules/index.js');
 
 /**
  * Initialize scan pipeline: validate target, load IOCs, apply config, detect Python deps.
@@ -55,6 +57,12 @@ async function initialize(targetPath, options) {
   if (configResult.warnings.length > 0) {
     for (const w of configResult.warnings) warnings.push(`[CONFIG] ${w}`);
   }
+
+  // Load external custom pattern-matching rules (best effort).
+  const customRuleResult = loadCustomRules(targetPath, options.rulesDirs);
+  options.customRules = customRuleResult.rules;
+  registerCustomRules(customRuleResult.rules);
+  if (customRuleResult.warnings.length > 0) warnings.push(...customRuleResult.warnings);
 
   return { pythonDeps, configApplied, configResult, warnings };
 }

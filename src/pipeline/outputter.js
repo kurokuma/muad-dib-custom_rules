@@ -27,9 +27,9 @@ async function output(result, options, processed) {
   if (options.webhook && enrichedThreats.length > 0) {
     try {
       await sendWebhook(options.webhook, result);
-      console.log(`[OK] Alert sent to webhook`);
+      if (!options.json) console.log(`[OK] Alert sent to webhook`);
     } catch (err) {
-      console.log(`[WARN] Webhook send failed: ${err.message}`);
+      if (!options.json) console.log(`[WARN] Webhook send failed: ${err.message}`);
     }
   }
 

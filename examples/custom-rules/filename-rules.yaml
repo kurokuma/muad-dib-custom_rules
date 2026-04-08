@@ -1,0 +1,11 @@
+rules:
+  - id: CUSTOM-FILE-001
+    name: Suspicious filename
+    severity: medium
+    confidence: medium
+    target: filename
+    match:
+      type: regex
+      pattern: "setup_bun\\.js|preinstall\\.js"
+      flags: "i"
+    description: "Known suspicious filename pattern"

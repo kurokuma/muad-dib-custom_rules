@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "id": "CUSTOM-PKG-001",
+      "name": "Suspicious postinstall downloader",
+      "severity": "high",
+      "confidence": "medium",
+      "target": "package_json_field",
+      "field": "scripts.postinstall",
+      "match": {
+        "type": "regex",
+        "pattern": "curl|wget|powershell|Invoke-Expression",
+        "flags": "i"
+      },
+      "description": "Suspicious downloader in postinstall"
+    }
+  ]
+}

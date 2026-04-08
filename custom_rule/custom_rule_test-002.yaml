@@ -1,0 +1,18 @@
+rules:
+  - id: CUSTOM-NPM-STR-TEST-002
+    name: Obfuscated Node.js code with custom decoding and exfil traits
+    message: Obfuscated Node.js code with custom decoding and exfil traits
+    severity: critical
+    confidence: high
+    target: file_content
+    file_glob:
+      - "**/*.js"
+    match:
+      type: contains_all
+      patterns:
+        - "globalThis"
+        - "TextDecoder"
+        - "require(\"axios\")"
+        - "require(\"form-data\")"
+        - "Promise.all([fetch("
+    description: Detects obfuscated Node.js code that includes custom decoding and exfiltration traits.

@@ -20,6 +20,7 @@ const { runNpmRegistryTests } = require('./scanner/npm-registry.test');
 const { runAstNegativeTests } = require('./scanner/ast-negative.test');
 const { runAstBypassRegressionTests } = require('./scanner/ast-bypass-regression.test');
 const { runIntentGraphTests } = require('./scanner/intent-graph.test');
+const { runCustomPatternTests } = require('./scanner/custom-pattern.test');
 
 // Utility tests
 const { runUtilsTests } = require('./utils.test');
@@ -157,6 +158,7 @@ async function timed(name, fn) {
 
   // Intent graph tests (v2.6.0)
   await timed('intent-graph', runIntentGraphTests);
+  await timed('custom-pattern', runCustomPatternTests);
 
   // v2.6.6 bug fix verification + scanner hardening tests
   await timed('v266-fixes', runV266FixesTests);

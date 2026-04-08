@@ -36,6 +36,7 @@ const helpText = `
     --paranoid          Ultra-strict detection mode
     --exclude [dir]     Exclude directory from scan (repeatable)
     --config [file]     Custom config file (.muaddibrc.json format)
+    --rules-dir [dir]   Load custom pattern rules from directory (repeatable)
     --entropy-threshold [n]  Custom entropy threshold (0-8, default: 5.5)
     --no-deobfuscate    Disable deobfuscation pre-processing
     --no-module-graph   Disable cross-file dataflow analysis
@@ -120,6 +121,7 @@ const commandHelp = {
     --paranoid          Ultra-strict detection mode
     --exclude [dir]     Exclude directory from scan (repeatable)
     --config [file]     Custom config file (.muaddibrc.json format)
+    --rules-dir [dir]   Load custom pattern rules from directory (repeatable)
     --entropy-threshold [n]  Custom entropy threshold (0-8, default: 5.5)
     --no-deobfuscate    Disable deobfuscation pre-processing
     --no-module-graph   Disable cross-file dataflow analysis

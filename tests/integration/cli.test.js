@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const {
   test, asyncTest, assert, assertIncludes, assertNotIncludes,
   runScan, runScanCached, runCommand, BIN, TESTS_DIR, addSkipped
@@ -22,6 +23,28 @@ async function runCliTests() {
   await asyncTest('CLI: --json returns valid JSON (direct)', async () => {
     const result = await runScanCached(path.join(TESTS_DIR, 'ast'));
     assert(result && result.summary, 'Should return valid result object');
+  });
+
+  test('CLI: --json emits only JSON with no warning noise', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'muaddib-json-'));
+    fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({
+      name: 'json-clean-test',
+      version: '1.0.0'
+    }, null, 2));
+    fs.writeFileSync(path.join(tmp, 'index.js'), 'console.log("ok");');
+    try {
+      const proc = spawnSync('node', [BIN, 'scan', tmp, '--json'], {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      assert(proc.status === 0, `Expected exit code 0, got ${proc.status}`);
+      assert(proc.stdout.trim().startsWith('{'), 'stdout should start with JSON object');
+      assert(proc.stderr.trim() === '', `stderr should be empty for --json, got: ${proc.stderr}`);
+      const parsed = JSON.parse(proc.stdout);
+      assert(parsed && parsed.summary, 'stdout should contain valid JSON result');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   test('CLI: --sarif generates SARIF file', () => {
@@ -51,6 +74,32 @@ async function runCliTests() {
     assertIncludes(output, 'MITRE', 'Should display MITRE');
     assertIncludes(output, 'References', 'Should display References');
     assertIncludes(output, 'Playbook', 'Should display Playbook');
+  });
+
+  test('CLI: --rules-dir loads external custom rules', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'muaddib-cli-rules-'));
+    const rulesDir = path.join(tmp, 'team-rules');
+    fs.mkdirSync(rulesDir, { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({
+      name: 'cli-custom-test',
+      version: '1.0.0'
+    }, null, 2));
+    fs.writeFileSync(path.join(tmp, 'setup_bun.js'), 'console.log("x");');
+    fs.writeFileSync(path.join(rulesDir, 'filename.yaml'), `
+rules:
+  - id: CUSTOM-CLI-001
+    name: Suspicious filename
+    target: filename
+    match:
+      type: regex
+      pattern: "setup_bun\\\\.js"
+`);
+    try {
+      const output = runScan(tmp, `--rules-dir "${rulesDir}"`);
+      assertIncludes(output, 'CUSTOM-CLI-001', 'CLI should load custom rules from --rules-dir');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   test('CLI: --fail-on critical exit code correct', () => {

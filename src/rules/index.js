@@ -2232,7 +2232,33 @@ const RULES = {
   },
 };
 
+const CUSTOM_RULES = new Map();
+
+function clearCustomRules() {
+  CUSTOM_RULES.clear();
+}
+
+function registerCustomRules(rules) {
+  clearCustomRules();
+  if (!Array.isArray(rules)) return;
+  for (const rule of rules) {
+    if (!rule || typeof rule !== 'object' || !rule.typeKey) continue;
+    CUSTOM_RULES.set(rule.typeKey, {
+      id: rule.id,
+      name: rule.name,
+      severity: rule.severity,
+      confidence: rule.confidence,
+      description: rule.description || 'Custom pattern-matching rule',
+      references: Array.isArray(rule.references) ? rule.references : [],
+      mitre: rule.mitre || null,
+      source: 'custom_rule',
+      origin: rule.origin || null
+    });
+  }
+}
+
 function getRule(type) {
+  if (CUSTOM_RULES.has(type)) return CUSTOM_RULES.get(type);
   if (RULES[type]) return RULES[type];
   if (PARANOID_RULES[type]) return PARANOID_RULES[type];
   if (PARANOID_RULES_BY_ID[type]) return PARANOID_RULES_BY_ID[type];
@@ -2311,4 +2337,10 @@ for (const [key, rule] of Object.entries(PARANOID_RULES)) {
   }
 }
 
-module.exports = { RULES, getRule, PARANOID_RULES };
+module.exports = {
+  RULES,
+  getRule,
+  PARANOID_RULES,
+  registerCustomRules,
+  clearCustomRules
+};
