@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/muaddibLogo.png" alt="MUAD'DIB Logo" width="700">
+  <img src="../assets/muaddibLogo.png" alt="MUAD'DIB Logo" width="700">
 </p>
 
 <p align="center">
@@ -21,7 +21,9 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English version</a>
+  <a href="../README.md">English</a> |
+  <a href="../README.ja.md">日本語</a> |
+  <a href="README.fr.md">Français</a>
 </p>
 
 ---
