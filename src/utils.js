@@ -4,11 +4,11 @@ const { MAX_FILE_SIZE, getMaxFileSize, clearASTCache } = require('./shared/const
 
 /**
  * Directories excluded from scanning.
- * Skips dependency/VCS/cache dirs and bundled output (dist/build/out).
+ * Skips dependency/VCS/cache dirs and bundled output (build/out).
  * Bundled output is minified, huge, and produces FPs without security value.
  * Obfuscation scanner uses its own OBF_EXCLUDED_DIRS to intentionally scan these.
  */
-const EXCLUDED_DIRS = ['node_modules', '.git', '.muaddib-cache', 'dist', 'build', 'out', 'output'];
+const EXCLUDED_DIRS = ['node_modules', '.git', '.muaddib-cache', 'build', 'out', 'output'];
 
 /**
  * Extra directories to exclude (set at runtime via --exclude flag).
